@@ -1,0 +1,67 @@
+name: BerrryDebugger
+
+options:
+  bundleIdPrefix: app.berrry
+  deploymentTarget:
+    iOS: "15.0"
+  developmentLanguage: en
+
+settings:
+  base:
+    # Binary size optimizations
+    SWIFT_OPTIMIZATION_LEVEL: -Osize
+    DEAD_CODE_STRIPPING: YES
+    STRIP_STYLE: non-global
+    ENABLE_BITCODE: YES
+    
+    # Target arm64 only for minimal size
+    ARCHS: arm64
+    VALID_ARCHS: arm64
+    
+    # Additional optimizations
+    GCC_OPTIMIZATION_LEVEL: s
+    STRIP_INSTALLED_PRODUCT: YES
+    COPY_PHASE_STRIP: YES
+    
+    # Disable unnecessary features
+    ENABLE_TESTABILITY: NO
+    
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  BerrryDebugger:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - Sources
+    resources:
+      - path: Resources
+        optional: true
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+          NSExceptionDomains: {}
+        UIRequiredDeviceCapabilities:
+          - arm64
+        LSRequiresIPhoneOS: true
+        UIMainStoryboardFile: ""
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.berrry.debugger
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
