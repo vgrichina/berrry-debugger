@@ -4,7 +4,7 @@ protocol ContextCopyControllerDelegate: AnyObject {
     func contextCopyController(_ controller: ContextCopyController, didRequestDOMExtraction completion: @escaping (String?) -> Void)
     func contextCopyController(_ controller: ContextCopyController, didRequestCSSExtraction completion: @escaping (String?) -> Void)
     func contextCopyControllerDidRequestConsoleLogs(_ controller: ContextCopyController) -> [String]
-    func contextCopyControllerDidRequestNetworkLogs(_ controller: ContextCopyController) -> [NetworkRequest]
+    func contextCopyControllerDidRequestNetworkLogs(_ controller: ContextCopyController) -> [NetworkRequestModel]
 }
 
 class ContextCopyController: NSObject {
@@ -16,6 +16,19 @@ class ContextCopyController: NSObject {
     private var promptTemplate: String = "Debug this: {context}"
     
     func showContextCopyOptions(from viewController: UIViewController) {
+        // Show enhanced context selection with preview
+        let contextViewController = EnhancedContextViewController()
+        contextViewController.modalPresentationStyle = .pageSheet
+        
+        if let sheet = contextViewController.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.preferredCornerRadius = 16
+        }
+        
+        viewController.present(contextViewController, animated: true)
+    }
+    
+    private func showLegacyContextSelector(from viewController: UIViewController) {
         let alertController = UIAlertController(
             title: "Select Context to Copy",
             message: nil,
@@ -25,31 +38,31 @@ class ContextCopyController: NSObject {
         // Context Type Selection
         let fullDOMAction = UIAlertAction(title: "Full DOM", style: .default) { [weak self] _ in
             self?.toggleContextType(.fullDOM)
-            self?.showContextCopyOptions(from: viewController)
+            self?.showLegacyContextSelector(from: viewController)
         }
         fullDOMAction.setValue(selectedContextTypes.contains(.fullDOM), forKey: "checked")
         
         let selectedElementAction = UIAlertAction(title: "Selected Element", style: .default) { [weak self] _ in
             self?.toggleContextType(.selectedElement)
-            self?.showContextCopyOptions(from: viewController)
+            self?.showLegacyContextSelector(from: viewController)
         }
         selectedElementAction.setValue(selectedContextTypes.contains(.selectedElement), forKey: "checked")
         
         let cssAction = UIAlertAction(title: "CSS", style: .default) { [weak self] _ in
             self?.toggleContextType(.css)
-            self?.showContextCopyOptions(from: viewController)
+            self?.showLegacyContextSelector(from: viewController)
         }
         cssAction.setValue(selectedContextTypes.contains(.css), forKey: "checked")
         
         let networkAction = UIAlertAction(title: "Network Logs", style: .default) { [weak self] _ in
             self?.toggleContextType(.networkLogs)
-            self?.showContextCopyOptions(from: viewController)
+            self?.showLegacyContextSelector(from: viewController)
         }
         networkAction.setValue(selectedContextTypes.contains(.networkLogs), forKey: "checked")
         
         let consoleAction = UIAlertAction(title: "Console Logs", style: .default) { [weak self] _ in
             self?.toggleContextType(.consoleLogs)
-            self?.showContextCopyOptions(from: viewController)
+            self?.showLegacyContextSelector(from: viewController)
         }
         consoleAction.setValue(selectedContextTypes.contains(.consoleLogs), forKey: "checked")
         

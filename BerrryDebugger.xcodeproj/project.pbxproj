@@ -7,8 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B74F23BD9BE83B950768D46 /* NetworkRequestTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */; };
 		2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */; };
+		3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */; };
 		364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */; };
+		62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */; };
+		9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */; };
+		BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */; };
 		C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */; };
 		E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342BB5E62130C1E5792B8F85 /* Models.swift */; };
 		F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */; };
@@ -17,11 +22,16 @@
 /* Begin PBXFileReference section */
 		1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserViewController.swift; sourceTree = "<group>"; };
+		245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedContextViewController.swift; sourceTree = "<group>"; };
 		342BB5E62130C1E5792B8F85 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestTableViewCell.swift; sourceTree = "<group>"; };
 		4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsViewController.swift; sourceTree = "<group>"; };
 		52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextCopyController.swift; sourceTree = "<group>"; };
 		64A7E020A53A3F23AEE00251 /* BerrryDebugger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BerrryDebugger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeModels.swift; sourceTree = "<group>"; };
+		A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestModels.swift; sourceTree = "<group>"; };
 		AB70FBF433EA4B22AC5E0507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -40,8 +50,13 @@
 				1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */,
 				52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */,
 				4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */,
+				A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */,
+				E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */,
+				245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */,
 				AB70FBF433EA4B22AC5E0507 /* Info.plist */,
 				342BB5E62130C1E5792B8F85 /* Models.swift */,
+				A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */,
+				35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -110,8 +125,13 @@
 				364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */,
 				C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */,
 				F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */,
+				62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */,
+				BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */,
 				2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */,
+				3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */,
 				E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */,
+				9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */,
+				0B74F23BD9BE83B950768D46 /* NetworkRequestTableViewCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -17,15 +17,27 @@ class DevToolsViewController: UIViewController {
     private let closeButton = UIButton(type: .system)
     
     // Tab Content Views
-    private let elementsTextView = UITextView()
+    private let elementsTableView = UITableView()
+    private let elementsSearchBar = UISearchBar()
     private let consoleTableView = UITableView()
     private let networkTableView = UITableView()
+    private let networkFilterScrollView = UIScrollView()
+    private let networkFilterStackView = UIStackView()
+    private let networkClearButton = UIButton(type: .system)
     
     // Data
     private var consoleLogs: [String] = []
-    private var networkRequests: [NetworkRequest] = []
+    private var networkRequests: [NetworkRequestModel] = []
+    private var filteredNetworkRequests: [NetworkRequestModel] = []
+    private var expandedNetworkRequests: Set<UUID> = []
+    private var selectedNetworkFilter: NetworkResourceType = .all
     private var currentWebView: WKWebView?
     private var selectedElementSelector: String = ""
+    private var domTreeRoot: DOMNode?
+    private var flattenedDOMNodes: [DOMNode] = []
+    private var filteredDOMNodes: [DOMNode] = []
+    private var selectedDOMNode: DOMNode?
+    private var searchText: String = ""
     
     private enum Tab: Int, CaseIterable {
         case elements = 0
@@ -93,14 +105,19 @@ class DevToolsViewController: UIViewController {
     }
     
     private func setupTabContent() {
-        // Elements Text View
-        elementsTextView.isEditable = false
-        elementsTextView.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-        elementsTextView.backgroundColor = UIColor.systemGray6
-        elementsTextView.translatesAutoresizingMaskIntoConstraints = false
+        // Elements Search Bar
+        elementsSearchBar.placeholder = "Search elements..."
+        elementsSearchBar.delegate = self
+        elementsSearchBar.searchBarStyle = .minimal
+        elementsSearchBar.translatesAutoresizingMaskIntoConstraints = false
         
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(elementsTextViewTapped(_:)))
-        elementsTextView.addGestureRecognizer(tapGesture)
+        // Elements Table View
+        elementsTableView.delegate = self
+        elementsTableView.dataSource = self
+        elementsTableView.register(DOMTreeTableViewCell.self, forCellReuseIdentifier: DOMTreeTableViewCell.identifier)
+        elementsTableView.separatorStyle = .none
+        elementsTableView.backgroundColor = UIColor.systemBackground
+        elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         
         // Console Table View
         consoleTableView.delegate = self
@@ -111,8 +128,12 @@ class DevToolsViewController: UIViewController {
         // Network Table View
         networkTableView.delegate = self
         networkTableView.dataSource = self
-        networkTableView.register(UITableViewCell.self, forCellReuseIdentifier: "NetworkCell")
+        networkTableView.register(NetworkRequestTableViewCell.self, forCellReuseIdentifier: NetworkRequestTableViewCell.identifier)
+        networkTableView.separatorStyle = .none
         networkTableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Network Filter Components
+        setupNetworkFilterComponents()
     }
     
     private func setupConstraints() {
@@ -170,14 +191,14 @@ class DevToolsViewController: UIViewController {
         
         switch tab {
         case .elements:
-            contentView = elementsTextView
-            loadDOMContent()
+            setupElementsTabLayout()
+            return // Special handling for elements tab
         case .console:
             contentView = consoleTableView
             consoleTableView.reloadData()
         case .network:
-            contentView = networkTableView
-            networkTableView.reloadData()
+            setupNetworkTabLayout()
+            return // Special handling for network tab
         }
         
         contentContainer.addSubview(contentView)
@@ -190,12 +211,59 @@ class DevToolsViewController: UIViewController {
         ])
     }
     
+    private func setupElementsTabLayout() {
+        contentContainer.addSubview(elementsSearchBar)
+        contentContainer.addSubview(elementsTableView)
+        
+        NSLayoutConstraint.activate([
+            // Search bar
+            elementsSearchBar.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            elementsSearchBar.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            elementsSearchBar.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            elementsSearchBar.heightAnchor.constraint(equalToConstant: 44),
+            
+            // Table view
+            elementsTableView.topAnchor.constraint(equalTo: elementsSearchBar.bottomAnchor),
+            elementsTableView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            elementsTableView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            elementsTableView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+        ])
+        
+        loadDOMContent()
+    }
+    
     private func loadDOMContent() {
         delegate?.devToolsDidRequestDOMExtraction(for: "") { [weak self] html in
             DispatchQueue.main.async {
-                self?.elementsTextView.text = html ?? "Failed to load DOM"
+                guard let self = self, let html = html else { return }
+                
+                // Parse HTML into DOM tree
+                self.domTreeRoot = DOMParser.parseHTML(html)
+                self.updateDOMDisplay()
             }
         }
+    }
+    
+    private func updateDOMDisplay() {
+        guard let root = domTreeRoot else {
+            flattenedDOMNodes = []
+            elementsTableView.reloadData()
+            return
+        }
+        
+        flattenedDOMNodes = root.flattenedNodes()
+        
+        // Apply search filter if needed
+        if searchText.isEmpty {
+            filteredDOMNodes = flattenedDOMNodes
+        } else {
+            filteredDOMNodes = flattenedDOMNodes.filter { node in
+                node.displayName.lowercased().contains(searchText.lowercased()) ||
+                node.tagName.lowercased().contains(searchText.lowercased())
+            }
+        }
+        
+        elementsTableView.reloadData()
     }
     
     // MARK: - Actions
@@ -209,55 +277,149 @@ class DevToolsViewController: UIViewController {
         contextCopyController.showContextCopyOptions(from: self)
     }
     
-    @objc private func elementsTextViewTapped(_ gesture: UITapGestureRecognizer) {
-        let location = gesture.location(in: elementsTextView)
-        let position = elementsTextView.closestPosition(to: location)
+    private func selectDOMNode(_ node: DOMNode) {
+        selectedDOMNode = node
+        selectedElementSelector = node.selector
+        elementsTableView.reloadData()
+    }
+    
+    private func expandCollapseDOMNode(_ node: DOMNode) {
+        node.toggleExpanded()
+        updateDOMDisplay()
+    }
+    
+    private func setupNetworkFilterComponents() {
+        // Filter scroll view
+        networkFilterScrollView.showsHorizontalScrollIndicator = false
+        networkFilterScrollView.translatesAutoresizingMaskIntoConstraints = false
         
-        if let position = position {
-            let offset = elementsTextView.offset(from: elementsTextView.beginningOfDocument, to: position)
+        // Filter stack view
+        networkFilterStackView.axis = .horizontal
+        networkFilterStackView.spacing = 8
+        networkFilterStackView.distribution = .fill
+        networkFilterStackView.translatesAutoresizingMaskIntoConstraints = false
+        networkFilterScrollView.addSubview(networkFilterStackView)
+        
+        // Create filter buttons
+        for resourceType in NetworkResourceType.allCases {
+            let button = createFilterButton(for: resourceType)
+            networkFilterStackView.addArrangedSubview(button)
+        }
+        
+        // Clear button
+        networkClearButton.setTitle("🗑️ Clear", for: .normal)
+        networkClearButton.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        networkClearButton.setTitleColor(UIColor.systemRed, for: .normal)
+        networkClearButton.backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
+        networkClearButton.layer.cornerRadius = 6
+        networkClearButton.addTarget(self, action: #selector(clearNetworkRequests), for: .touchUpInside)
+        networkClearButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Constraints for filter scroll view content
+        NSLayoutConstraint.activate([
+            networkFilterStackView.topAnchor.constraint(equalTo: networkFilterScrollView.topAnchor),
+            networkFilterStackView.leadingAnchor.constraint(equalTo: networkFilterScrollView.leadingAnchor, constant: 12),
+            networkFilterStackView.trailingAnchor.constraint(equalTo: networkFilterScrollView.trailingAnchor, constant: -12),
+            networkFilterStackView.bottomAnchor.constraint(equalTo: networkFilterScrollView.bottomAnchor),
+            networkFilterStackView.heightAnchor.constraint(equalTo: networkFilterScrollView.heightAnchor)
+        ])
+    }
+    
+    private func createFilterButton(for resourceType: NetworkResourceType) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle("\\(resourceType.emoji) \\(resourceType.rawValue)", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        button.backgroundColor = resourceType == .all ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.systemGray6
+        button.setTitleColor(resourceType == .all ? UIColor.systemBlue : UIColor.label, for: .normal)
+        button.layer.cornerRadius = 6
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+        button.tag = NetworkResourceType.allCases.firstIndex(of: resourceType) ?? 0
+        button.addTarget(self, action: #selector(networkFilterButtonTapped(_:)), for: .touchUpInside)
+        return button
+    }
+    
+    private func setupNetworkTabLayout() {
+        contentContainer.addSubview(networkFilterScrollView)
+        contentContainer.addSubview(networkClearButton)
+        contentContainer.addSubview(networkTableView)
+        
+        NSLayoutConstraint.activate([
+            // Filter scroll view
+            networkFilterScrollView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            networkFilterScrollView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            networkFilterScrollView.trailingAnchor.constraint(equalTo: networkClearButton.leadingAnchor, constant: -8),
+            networkFilterScrollView.heightAnchor.constraint(equalToConstant: 40),
             
-            // Simple element selection logic - find the nearest HTML tag
-            let text = elementsTextView.text ?? ""
-            let index = text.index(text.startIndex, offsetBy: min(offset, text.count - 1))
+            // Clear button
+            networkClearButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 4),
+            networkClearButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -12),
+            networkClearButton.widthAnchor.constraint(equalToConstant: 70),
+            networkClearButton.heightAnchor.constraint(equalToConstant: 32),
             
-            // Find the nearest opening tag
-            var startIndex = index
-            while startIndex > text.startIndex && text[startIndex] != "<" {
-                startIndex = text.index(before: startIndex)
-            }
-            
-            var endIndex = startIndex
-            while endIndex < text.endIndex && text[endIndex] != ">" {
-                endIndex = text.index(after: endIndex)
-            }
-            
-            if startIndex < endIndex {
-                let tagContent = String(text[startIndex...endIndex])
-                
-                // Extract tag name and create selector
-                if let tagName = extractTagName(from: tagContent) {
-                    selectedElementSelector = tagName
-                    
-                    // Highlight selection (simple approach)
-                    let attributedText = NSMutableAttributedString(string: text)
-                    let range = NSRange(startIndex..<text.index(after: endIndex), in: text)
-                    attributedText.addAttribute(.backgroundColor, value: UIColor.systemYellow, range: range)
-                    elementsTextView.attributedText = attributedText
-                }
+            // Network table view
+            networkTableView.topAnchor.constraint(equalTo: networkFilterScrollView.bottomAnchor, constant: 8),
+            networkTableView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            networkTableView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            networkTableView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+        ])
+        
+        updateNetworkDisplay()
+    }
+    
+    private func updateNetworkDisplay() {
+        // Apply filter
+        if selectedNetworkFilter == .all {
+            filteredNetworkRequests = networkRequests
+        } else {
+            filteredNetworkRequests = networkRequests.filter { $0.resourceType == selectedNetworkFilter }
+        }
+        
+        networkTableView.reloadData()
+        updateFilterButtonStates()
+    }
+    
+    private func updateFilterButtonStates() {
+        for (index, resourceType) in NetworkResourceType.allCases.enumerated() {
+            if let button = networkFilterStackView.arrangedSubviews[index] as? UIButton {
+                let isSelected = resourceType == selectedNetworkFilter
+                button.backgroundColor = isSelected ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.systemGray6
+                button.setTitleColor(isSelected ? UIColor.systemBlue : UIColor.label, for: .normal)
             }
         }
     }
     
-    private func extractTagName(from tag: String) -> String? {
-        let components = tag.dropFirst().dropLast().components(separatedBy: " ")
-        return components.first?.lowercased()
+    @objc private func networkFilterButtonTapped(_ sender: UIButton) {
+        let resourceType = NetworkResourceType.allCases[sender.tag]
+        selectedNetworkFilter = resourceType
+        updateNetworkDisplay()
+    }
+    
+    @objc private func clearNetworkRequests() {
+        networkRequests.removeAll()
+        filteredNetworkRequests.removeAll()
+        expandedNetworkRequests.removeAll()
+        networkTableView.reloadData()
+    }
+    
+    private func toggleNetworkRequestExpansion(_ request: NetworkRequestModel) {
+        if expandedNetworkRequests.contains(request.id) {
+            expandedNetworkRequests.remove(request.id)
+        } else {
+            expandedNetworkRequests.insert(request.id)
+        }
+        networkTableView.reloadData()
     }
     
     // MARK: - Public Methods
-    func updateData(consoleLogs: [String], networkRequests: [NetworkRequest], webView: WKWebView) {
+    func updateData(consoleLogs: [String], networkRequests: [NetworkRequestModel], webView: WKWebView) {
         self.consoleLogs = consoleLogs
         self.networkRequests = networkRequests
         self.currentWebView = webView
+        
+        // Update network display if on network tab
+        if currentTab == .network {
+            updateNetworkDisplay()
+        }
         
         // Reload current tab
         showTab(currentTab)
@@ -276,31 +438,54 @@ extension DevToolsViewController: UITabBarDelegate {
 // MARK: - UITableViewDataSource & UITableViewDelegate
 extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if tableView == consoleTableView {
+        if tableView == elementsTableView {
+            return filteredDOMNodes.count
+        } else if tableView == consoleTableView {
             return consoleLogs.count
         } else if tableView == networkTableView {
-            return networkRequests.count
+            return filteredNetworkRequests.count
         }
         return 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if tableView == consoleTableView {
+        if tableView == elementsTableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: DOMTreeTableViewCell.identifier, for: indexPath) as! DOMTreeTableViewCell
+            let node = filteredDOMNodes[indexPath.row]
+            let isSelected = node === selectedDOMNode
+            
+            cell.configure(with: node, isSelected: isSelected) { [weak self] node in
+                self?.expandCollapseDOMNode(node)
+            }
+            
+            return cell
+        } else if tableView == consoleTableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "ConsoleCell", for: indexPath)
             cell.textLabel?.text = consoleLogs[indexPath.row]
             cell.textLabel?.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
             cell.textLabel?.numberOfLines = 0
             return cell
         } else if tableView == networkTableView {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "NetworkCell", for: indexPath)
-            let request = networkRequests[indexPath.row]
-            cell.textLabel?.text = "\(request.method) \(request.url)"
-            cell.detailTextLabel?.text = "Status: \(request.status)"
-            cell.textLabel?.font = UIFont.systemFont(ofSize: 14)
-            cell.detailTextLabel?.font = UIFont.systemFont(ofSize: 12)
+            let cell = tableView.dequeueReusableCell(withIdentifier: NetworkRequestTableViewCell.identifier, for: indexPath) as! NetworkRequestTableViewCell
+            let request = filteredNetworkRequests[indexPath.row]
+            let isExpanded = expandedNetworkRequests.contains(request.id)
+            
+            cell.configure(with: request, isExpanded: isExpanded) { [weak self] request in
+                self?.toggleNetworkRequestExpansion(request)
+            }
+            
             return cell
         }
         return UITableViewCell()
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        if tableView == elementsTableView {
+            let node = filteredDOMNodes[indexPath.row]
+            selectDOMNode(node)
+        }
     }
 }
 
@@ -318,7 +503,26 @@ extension DevToolsViewController: ContextCopyControllerDelegate {
         return consoleLogs
     }
     
-    func contextCopyControllerDidRequestNetworkLogs(_ controller: ContextCopyController) -> [NetworkRequest] {
+    func contextCopyControllerDidRequestNetworkLogs(_ controller: ContextCopyController) -> [NetworkRequestModel] {
         return networkRequests
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension DevToolsViewController: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        self.searchText = searchText
+        updateDOMDisplay()
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
+        searchBar.resignFirstResponder()
+        self.searchText = ""
+        updateDOMDisplay()
     }
 }

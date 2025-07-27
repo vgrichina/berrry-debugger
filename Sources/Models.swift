@@ -19,7 +19,7 @@ struct NetworkRequest {
 struct ContextData {
     let html: String?
     let css: String?
-    let networkLogs: [NetworkRequest]
+    let networkLogs: [NetworkRequestModel]
     let consoleLogs: [String]
     
     func toJSON() -> String {
