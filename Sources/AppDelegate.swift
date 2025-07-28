@@ -8,6 +8,57 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.rootViewController = BrowserViewController()
         window?.makeKeyAndVisible()
+        
+        // Handle URL if app was launched from URL scheme
+        if let url = launchOptions?[UIApplication.LaunchOptionsKey.url] as? URL {
+            handleIncomingURL(url)
+        }
+        
         return true
+    }
+    
+    // Handle URL schemes when app is already running
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        handleIncomingURL(url)
+        return true
+    }
+    
+    private func handleIncomingURL(_ url: URL) {
+        guard let browserViewController = window?.rootViewController as? BrowserViewController else {
+            return
+        }
+        
+        // Handle custom URL schemes
+        if url.scheme == "berrry-debugger" || url.scheme == "berrry" {
+            if let targetURL = extractTargetURL(from: url) {
+                browserViewController.loadURL(targetURL)
+            }
+        }
+        // Handle direct URLs shared from other apps
+        else if url.scheme == "http" || url.scheme == "https" {
+            browserViewController.loadURL(url.absoluteString)
+        }
+    }
+    
+    private func extractTargetURL(from url: URL) -> String? {
+        // Handle formats like:
+        // berrry-debugger://open?url=https://example.com
+        // berrry://https://example.com
+        
+        if let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            // Check for query parameter format
+            if let queryItems = urlComponents.queryItems,
+               let targetURL = queryItems.first(where: { $0.name == "url" })?.value {
+                return targetURL
+            }
+            
+            // Check for path-based format (berrry://https://example.com)
+            let path = url.absoluteString.replacingOccurrences(of: "\(url.scheme!)://", with: "")
+            if path.hasPrefix("http://") || path.hasPrefix("https://") {
+                return path
+            }
+        }
+        
+        return nil
     }
 }

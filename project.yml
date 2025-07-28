@@ -59,6 +59,17 @@ targets:
           - arm64
         LSRequiresIPhoneOS: true
         UIMainStoryboardFile: ""
+        CFBundleURLTypes:
+          - CFBundleURLName: "BerrryDebugger URL Scheme"
+            CFBundleURLSchemes:
+              - "berrry-debugger"
+              - "berrry"
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: "public.url"
+            UTTypeReferenceURL: "https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml"
+            UTTypeDescription: "Web URL"
+            UTTypeConformsTo:
+              - "public.text"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.berrry.debugger

@@ -272,11 +272,8 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         ])
     }
     
-    // MARK: - Actions
-    @objc private func goButtonTapped() {
-        guard let urlString = urlTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !urlString.isEmpty else { return }
-        
+    // MARK: - Public Methods
+    func loadURL(_ urlString: String) {
         let finalURLString: String
         if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
             finalURLString = urlString
@@ -287,6 +284,19 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         guard let url = URL(string: finalURLString) else { return }
         let request = URLRequest(url: url)
         webView.load(request)
+        
+        // Update URL text field
+        DispatchQueue.main.async { [weak self] in
+            self?.urlTextField.text = finalURLString
+        }
+    }
+    
+    // MARK: - Actions
+    @objc private func goButtonTapped() {
+        guard let urlString = urlTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !urlString.isEmpty else { return }
+        
+        loadURL(urlString)
     }
     
     @objc private func goBack() {
