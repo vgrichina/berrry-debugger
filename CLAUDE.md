@@ -151,6 +151,28 @@ Sources/
 └── Info.plist                      # App configuration
 ```
 
+## App Entry Points
+
+### URL Scheme Integration
+The app supports two entry methods for external URL loading:
+
+**Custom URL Schemes**: `berrry://` and `berrry-debugger://`
+- Query parameter format: `berrry-debugger://open?url=https%3A//example.com` (URL encoded)
+- Path-based format: `berrry://https://example.com`
+- Handled in `AppDelegate.swift` via `application(_:open:options:)`
+- URLComponents automatically handles URL decoding for query parameters
+
+**Share Sheet Integration**
+- Users can share URLs from Safari/other apps directly to BerrryDebugger
+- Configured via `UTImportedTypeDeclarations` in `project.yml`
+- Automatically opens shared URLs in the browser
+
+**Implementation Details**:
+- `AppDelegate.handleIncomingURL()` processes both entry methods
+- `BrowserViewController.loadURL()` public method loads URLs programmatically
+- URL text field updates automatically when URLs are loaded externally
+- Supports both app launch and running app scenarios
+
 ## Critical Implementation Notes
 
 ### Network Monitoring Debugging

@@ -42,11 +42,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func extractTargetURL(from url: URL) -> String? {
         // Handle formats like:
-        // berrry-debugger://open?url=https://example.com
-        // berrry://https://example.com
+        // berrry-debugger://open?url=https%3A//example.com (URL encoded)
+        // berrry://https://example.com (direct path)
         
         if let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-            // Check for query parameter format
+            // Check for query parameter format (automatically URL decoded by URLComponents)
             if let queryItems = urlComponents.queryItems,
                let targetURL = queryItems.first(where: { $0.name == "url" })?.value {
                 return targetURL

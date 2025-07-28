@@ -86,6 +86,25 @@ open BerrryDebugger.xcodeproj
 3. Switch to the "Network" tab to see captured requests
 4. Tap any request for detailed headers and response information
 
+### App Integration
+BerrryDebugger supports multiple ways to open URLs:
+
+**Share Sheet Integration**
+- Share URLs from Safari or other apps directly to BerrryDebugger
+- Appears in the system share sheet for URL content
+- Automatically opens shared URLs in the browser
+
+**Custom URL Schemes**
+- `berrry://https://example.com` - Direct URL format
+- `berrry-debugger://open?url=https%3A//example.com` - Query parameter format (URL encoded)
+- Enables deep linking from websites and other apps
+
+Example usage in websites:
+```html
+<a href="berrry://https://httpbin.org">Open in BerrryDebugger</a>
+<a href="berrry-debugger://open?url=https%3A//example.com">Debug this site</a>
+```
+
 ### Testing Network Monitoring
 Use the included `test_network.html` file to verify all monitoring capabilities:
 - HTTP requests (GET/POST)
