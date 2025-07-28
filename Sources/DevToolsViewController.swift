@@ -21,8 +21,7 @@ class DevToolsViewController: UIViewController {
     private let elementsSearchBar = UISearchBar()
     private let consoleTableView = UITableView()
     private let networkTableView = UITableView()
-    private let networkFilterScrollView = UIScrollView()
-    private let networkFilterStackView = UIStackView()
+    private let networkSearchBar = UISearchBar()
     private let networkClearButton = UIButton(type: .system)
     
     // Data
@@ -30,7 +29,6 @@ class DevToolsViewController: UIViewController {
     private var networkRequests: [NetworkRequestModel] = []
     private var filteredNetworkRequests: [NetworkRequestModel] = []
     private var expandedNetworkRequests: Set<UUID> = []
-    private var selectedNetworkFilter: NetworkResourceType = .all
     private var currentWebView: WKWebView?
     private var selectedElementSelector: String = ""
     private var domTreeRoot: DOMNode?
@@ -38,6 +36,7 @@ class DevToolsViewController: UIViewController {
     private var filteredDOMNodes: [DOMNode] = []
     private var selectedDOMNode: DOMNode?
     private var searchText: String = ""
+    private var networkSearchText: String = ""
     
     private enum Tab: Int, CaseIterable {
         case elements = 0
@@ -125,6 +124,12 @@ class DevToolsViewController: UIViewController {
         consoleTableView.register(UITableViewCell.self, forCellReuseIdentifier: "ConsoleCell")
         consoleTableView.translatesAutoresizingMaskIntoConstraints = false
         
+        // Network Search Bar
+        networkSearchBar.placeholder = "Filter network requests..."
+        networkSearchBar.delegate = self
+        networkSearchBar.searchBarStyle = .minimal
+        networkSearchBar.translatesAutoresizingMaskIntoConstraints = false
+        
         // Network Table View
         networkTableView.delegate = self
         networkTableView.dataSource = self
@@ -132,8 +137,14 @@ class DevToolsViewController: UIViewController {
         networkTableView.separatorStyle = .none
         networkTableView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Network Filter Components
-        setupNetworkFilterComponents()
+        // Clear button
+        networkClearButton.setTitle("🗑️ Clear", for: .normal)
+        networkClearButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        networkClearButton.setTitleColor(UIColor.systemRed, for: .normal)
+        networkClearButton.backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
+        networkClearButton.layer.cornerRadius = 8
+        networkClearButton.addTarget(self, action: #selector(clearNetworkRequests), for: .touchUpInside)
+        networkClearButton.translatesAutoresizingMaskIntoConstraints = false
     }
     
     private func setupConstraints() {
@@ -288,76 +299,27 @@ class DevToolsViewController: UIViewController {
         updateDOMDisplay()
     }
     
-    private func setupNetworkFilterComponents() {
-        // Filter scroll view
-        networkFilterScrollView.showsHorizontalScrollIndicator = false
-        networkFilterScrollView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Filter stack view
-        networkFilterStackView.axis = .horizontal
-        networkFilterStackView.spacing = 8
-        networkFilterStackView.distribution = .fill
-        networkFilterStackView.translatesAutoresizingMaskIntoConstraints = false
-        networkFilterScrollView.addSubview(networkFilterStackView)
-        
-        // Create filter buttons
-        for resourceType in NetworkResourceType.allCases {
-            let button = createFilterButton(for: resourceType)
-            networkFilterStackView.addArrangedSubview(button)
-        }
-        
-        // Clear button
-        networkClearButton.setTitle("🗑️ Clear", for: .normal)
-        networkClearButton.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        networkClearButton.setTitleColor(UIColor.systemRed, for: .normal)
-        networkClearButton.backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
-        networkClearButton.layer.cornerRadius = 6
-        networkClearButton.addTarget(self, action: #selector(clearNetworkRequests), for: .touchUpInside)
-        networkClearButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Constraints for filter scroll view content
-        NSLayoutConstraint.activate([
-            networkFilterStackView.topAnchor.constraint(equalTo: networkFilterScrollView.topAnchor),
-            networkFilterStackView.leadingAnchor.constraint(equalTo: networkFilterScrollView.leadingAnchor, constant: 12),
-            networkFilterStackView.trailingAnchor.constraint(equalTo: networkFilterScrollView.trailingAnchor, constant: -12),
-            networkFilterStackView.bottomAnchor.constraint(equalTo: networkFilterScrollView.bottomAnchor),
-            networkFilterStackView.heightAnchor.constraint(equalTo: networkFilterScrollView.heightAnchor)
-        ])
-    }
-    
-    private func createFilterButton(for resourceType: NetworkResourceType) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle("\\(resourceType.emoji) \\(resourceType.rawValue)", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .medium)
-        button.backgroundColor = resourceType == .all ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.systemGray6
-        button.setTitleColor(resourceType == .all ? UIColor.systemBlue : UIColor.label, for: .normal)
-        button.layer.cornerRadius = 6
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
-        button.tag = NetworkResourceType.allCases.firstIndex(of: resourceType) ?? 0
-        button.addTarget(self, action: #selector(networkFilterButtonTapped(_:)), for: .touchUpInside)
-        return button
-    }
     
     private func setupNetworkTabLayout() {
-        contentContainer.addSubview(networkFilterScrollView)
+        contentContainer.addSubview(networkSearchBar)
         contentContainer.addSubview(networkClearButton)
         contentContainer.addSubview(networkTableView)
         
         NSLayoutConstraint.activate([
-            // Filter scroll view
-            networkFilterScrollView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
-            networkFilterScrollView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
-            networkFilterScrollView.trailingAnchor.constraint(equalTo: networkClearButton.leadingAnchor, constant: -8),
-            networkFilterScrollView.heightAnchor.constraint(equalToConstant: 40),
+            // Search bar
+            networkSearchBar.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            networkSearchBar.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            networkSearchBar.trailingAnchor.constraint(equalTo: networkClearButton.leadingAnchor, constant: -8),
+            networkSearchBar.heightAnchor.constraint(equalToConstant: 44),
             
             // Clear button
-            networkClearButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 4),
-            networkClearButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -12),
-            networkClearButton.widthAnchor.constraint(equalToConstant: 70),
+            networkClearButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 6),
+            networkClearButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -20),
+            networkClearButton.widthAnchor.constraint(equalToConstant: 80),
             networkClearButton.heightAnchor.constraint(equalToConstant: 32),
             
             // Network table view
-            networkTableView.topAnchor.constraint(equalTo: networkFilterScrollView.bottomAnchor, constant: 8),
+            networkTableView.topAnchor.constraint(equalTo: networkSearchBar.bottomAnchor),
             networkTableView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
             networkTableView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
             networkTableView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
@@ -366,38 +328,23 @@ class DevToolsViewController: UIViewController {
         updateNetworkDisplay()
     }
     
-    private func updateNetworkDisplay() {
-        // Apply filter
-        if selectedNetworkFilter == .all {
-            filteredNetworkRequests = networkRequests
-        } else {
-            filteredNetworkRequests = networkRequests.filter { $0.resourceType == selectedNetworkFilter }
-        }
-        
-        networkTableView.reloadData()
-        updateFilterButtonStates()
-    }
-    
-    private func updateFilterButtonStates() {
-        for (index, resourceType) in NetworkResourceType.allCases.enumerated() {
-            if let button = networkFilterStackView.arrangedSubviews[index] as? UIButton {
-                let isSelected = resourceType == selectedNetworkFilter
-                button.backgroundColor = isSelected ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.systemGray6
-                button.setTitleColor(isSelected ? UIColor.systemBlue : UIColor.label, for: .normal)
-            }
-        }
-    }
-    
-    @objc private func networkFilterButtonTapped(_ sender: UIButton) {
-        let resourceType = NetworkResourceType.allCases[sender.tag]
-        selectedNetworkFilter = resourceType
-        updateNetworkDisplay()
-    }
     
     @objc private func clearNetworkRequests() {
         networkRequests.removeAll()
-        filteredNetworkRequests.removeAll()
         expandedNetworkRequests.removeAll()
+        updateNetworkDisplay()
+    }
+    
+    private func updateNetworkDisplay() {
+        if networkSearchText.isEmpty {
+            filteredNetworkRequests = networkRequests
+        } else {
+            filteredNetworkRequests = networkRequests.filter { request in
+                request.url.lowercased().contains(networkSearchText.lowercased()) ||
+                request.method.lowercased().contains(networkSearchText.lowercased()) ||
+                String(request.status).contains(networkSearchText)
+            }
+        }
         networkTableView.reloadData()
     }
     
@@ -511,8 +458,13 @@ extension DevToolsViewController: ContextCopyControllerDelegate {
 // MARK: - UISearchBarDelegate
 extension DevToolsViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        self.searchText = searchText
-        updateDOMDisplay()
+        if searchBar == elementsSearchBar {
+            self.searchText = searchText
+            updateDOMDisplay()
+        } else if searchBar == networkSearchBar {
+            self.networkSearchText = searchText
+            updateNetworkDisplay()
+        }
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -522,7 +474,13 @@ extension DevToolsViewController: UISearchBarDelegate {
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.text = ""
         searchBar.resignFirstResponder()
-        self.searchText = ""
-        updateDOMDisplay()
+        
+        if searchBar == elementsSearchBar {
+            self.searchText = ""
+            updateDOMDisplay()
+        } else if searchBar == networkSearchBar {
+            self.networkSearchText = ""
+            updateNetworkDisplay()
+        }
     }
 }

@@ -162,7 +162,7 @@ class NetworkRequestTableViewCell: UITableViewCell {
         methodLabel.text = request.method
         
         // Configure status
-        statusLabel.text = request.status == 0 ? "..." : "\(request.status)"
+        statusLabel.text = request.status == 0 ? "Pending" : request.statusText
         let statusColor = getStatusColor(request.statusColor)
         statusLabel.backgroundColor = statusColor.withAlphaComponent(0.2)
         statusLabel.textColor = statusColor

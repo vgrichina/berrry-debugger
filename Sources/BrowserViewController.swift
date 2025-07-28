@@ -20,6 +20,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     private var devToolsViewController: DevToolsViewController?
     private var consoleLogs: [String] = []
     private var networkRequests: [NetworkRequestModel] = []
+    private var networkInterceptor: NetworkInterceptor?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,6 +49,14 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     // MARK: - WebView Setup
     private func setupWebView() {
         let config = WKWebViewConfiguration()
+        
+        // Setup network interceptor
+        networkInterceptor = NetworkInterceptor()
+        networkInterceptor?.delegate = self
+        
+        // Register URL scheme handlers for HTTP and HTTPS
+        config.setURLSchemeHandler(networkInterceptor, forURLScheme: "http")
+        config.setURLSchemeHandler(networkInterceptor, forURLScheme: "https")
         
         // Add console message handler
         config.userContentController.add(self, name: "console")
@@ -412,28 +421,13 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        // Only allow HTTPS
-        if let url = navigationAction.request.url,
-           url.scheme == "http" {
-            // Convert to HTTPS
-            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            components?.scheme = "https"
-            if let httpsURL = components?.url {
-                let httpsRequest = URLRequest(url: httpsURL)
-                webView.load(httpsRequest)
+        // Clear network requests for main frame navigations (new page loads)
+        if navigationAction.targetFrame?.isMainFrame == true {
+            networkRequests.removeAll()
+            // Update DevTools if it's currently open
+            if let devTools = devToolsViewController {
+                devTools.updateData(consoleLogs: consoleLogs, networkRequests: networkRequests, webView: webView)
             }
-            decisionHandler(.cancel)
-            return
-        }
-        
-        // Track network request
-        if let url = navigationAction.request.url {
-            let networkRequest = NetworkRequestModel(
-                url: url.absoluteString,
-                method: navigationAction.request.httpMethod ?? "GET",
-                headers: navigationAction.request.allHTTPHeaderFields ?? [:]
-            )
-            networkRequests.append(networkRequest)
         }
         
         decisionHandler(.allow)
@@ -463,6 +457,30 @@ extension BrowserViewController: UITextFieldDelegate {
         goButtonTapped()
         textField.resignFirstResponder()
         return true
+    }
+}
+
+// MARK: - NetworkInterceptorDelegate
+extension BrowserViewController: NetworkInterceptorDelegate {
+    func networkInterceptor(_ interceptor: NetworkInterceptor, didCaptureRequest request: NetworkRequestModel) {
+        DispatchQueue.main.async {
+            self.networkRequests.append(request)
+            
+            // Update DevTools if it's currently open and showing network tab
+            if let devTools = self.devToolsViewController {
+                devTools.updateData(consoleLogs: self.consoleLogs, networkRequests: self.networkRequests, webView: self.webView)
+            }
+        }
+    }
+    
+    func networkInterceptor(_ interceptor: NetworkInterceptor, didUpdateRequest request: NetworkRequestModel) {
+        DispatchQueue.main.async {
+            // The request object is already in our array and updated by reference
+            // Just refresh the DevTools display
+            if let devTools = self.devToolsViewController {
+                devTools.updateData(consoleLogs: self.consoleLogs, networkRequests: self.networkRequests, webView: self.webView)
+            }
+        }
     }
 }
 
