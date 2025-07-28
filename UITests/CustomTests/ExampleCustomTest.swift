@@ -53,13 +53,13 @@ class ExampleCustomTest: XCTestCase {
             let urlField = app.textFields["URL"]
             urlField.tap()
             urlField.typeText("https://")
-            sleep(1)
+            sleep(UInt32(1))
             urlField.typeText("httpbin.org/get")
         }
         
         framework.runCustomAction(name: "manual_go_button") {
             app.buttons["Go"].tap()
-            sleep(3)
+            sleep(UInt32(3))
         }
         
         framework.openDevTools(screenshotName: "custom_devtools")

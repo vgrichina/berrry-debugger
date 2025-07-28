@@ -141,6 +141,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         urlTextField.delegate = self
         urlTextField.backgroundColor = UIColor.clear
         urlTextField.font = UIFont.systemFont(ofSize: 16)
+        urlTextField.accessibilityIdentifier = "URL"
         urlTextField.translatesAutoresizingMaskIntoConstraints = false
         urlContainerView.addSubview(urlTextField)
         
@@ -149,6 +150,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         goButton.backgroundColor = UIColor.systemBlue
         goButton.setTitleColor(.white, for: .normal)
         goButton.layer.cornerRadius = 8
+        goButton.accessibilityIdentifier = "Go"
         goButton.addTarget(self, action: #selector(goButtonTapped), for: .touchUpInside)
         goButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(goButton)
@@ -171,6 +173,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         devToolsFAB.layer.shadowOffset = CGSize(width: 0, height: 2)
         devToolsFAB.layer.shadowRadius = 4
         devToolsFAB.layer.shadowOpacity = 0.2
+        devToolsFAB.accessibilityIdentifier = "Developer Tools"
         devToolsFAB.addTarget(self, action: #selector(showDevTools), for: .touchUpInside)
         devToolsFAB.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(devToolsFAB)

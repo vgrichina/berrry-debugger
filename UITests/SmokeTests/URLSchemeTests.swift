@@ -32,7 +32,7 @@ class URLSchemeTests: XCTestCase {
         // Test different URL schemes work
         framework.loadURLViaScheme("https://httpbin.org/json", screenshotName: "scheme_json")
         
-        sleep(2)
+        sleep(UInt32(2))
         
         framework.loadURLViaScheme("https://example.com", screenshotName: "scheme_example")
         

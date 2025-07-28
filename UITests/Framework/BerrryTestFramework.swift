@@ -26,7 +26,7 @@ class BerrryTestFramework {
         app.buttons["Go"].tap()
         
         // Wait for page load
-        sleep(3)
+        sleep(UInt32(3))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -41,7 +41,7 @@ class BerrryTestFramework {
         // Simulate opening URL (in real test, this would come from external trigger)
         app.activate()
         
-        sleep(3)
+        sleep(UInt32(3))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -52,7 +52,7 @@ class BerrryTestFramework {
         fabButton.tap()
         
         // Wait for dev tools to open
-        sleep(1)
+        sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -61,7 +61,7 @@ class BerrryTestFramework {
         XCTAssertTrue(networkTab.waitForExistence(timeout: 5), "Network tab should exist")
         
         networkTab.tap()
-        sleep(1)
+        sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -70,7 +70,7 @@ class BerrryTestFramework {
         XCTAssertTrue(elementsTab.waitForExistence(timeout: 5), "Elements tab should exist")
         
         elementsTab.tap()
-        sleep(1)
+        sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -79,7 +79,7 @@ class BerrryTestFramework {
         XCTAssertTrue(consoleTab.waitForExistence(timeout: 5), "Console tab should exist")
         
         consoleTab.tap()
-        sleep(1)
+        sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -90,7 +90,7 @@ class BerrryTestFramework {
             webView.tap()
         }
         
-        sleep(1)
+        sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
@@ -111,7 +111,7 @@ class BerrryTestFramework {
     func waitForNetworkRequests(count: Int, timeout: TimeInterval = 10) {
         // Wait for network requests to appear in dev tools
         // This is a best-effort wait since we can't directly inspect the network list
-        sleep(Int(timeout))
+        sleep(UInt32(timeout))
     }
     
     // MARK: - Utilities

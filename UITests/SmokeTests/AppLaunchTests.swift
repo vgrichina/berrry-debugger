@@ -28,7 +28,7 @@ class AppLaunchTests: XCTestCase {
         framework.launchApp(screenshotName: "launch_stability")
         
         // Wait a bit to ensure app is stable
-        sleep(2)
+        sleep(UInt32(2))
         
         // Take another screenshot to verify app is still responsive
         framework.runCustomAction(name: "stability_check") {

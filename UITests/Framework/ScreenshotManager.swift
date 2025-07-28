@@ -22,8 +22,8 @@ class ScreenshotManager {
         let attachment = XCTAttachment(screenshot: screenshot)
         attachment.name = "\(testCase)_\(name)"
         attachment.lifetime = .keepAlways
-        XCTContext.runActivity(named: "Screenshot: \(name)") { _ in
-            add(attachment)
+        XCTContext.runActivity(named: "Screenshot: \(name)") { activity in
+            activity.add(attachment)
         }
         
         // Save to predictable file path for Claude analysis

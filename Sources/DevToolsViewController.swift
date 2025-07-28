@@ -184,6 +184,7 @@ class DevToolsViewController: UIViewController {
                 image: UIImage(systemName: tab.imageName),
                 tag: tab.rawValue
             )
+            item.accessibilityIdentifier = tab.title
             tabBarItems.append(item)
         }
         

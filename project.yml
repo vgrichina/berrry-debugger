@@ -89,3 +89,4 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.berrry.debugger.uitests
         TEST_TARGET_NAME: BerrryDebugger
+        GENERATE_INFOPLIST_FILE: YES
