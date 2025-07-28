@@ -113,12 +113,15 @@ case "${1:-all}" in
     "smoke")
         echo -e "${BLUE}Running smoke tests only...${NC}"
         build_project
-        run_tests "SmokeTests"
+        # Run each smoke test class individually
+        run_tests "AppLaunchTests"
+        run_tests "URLSchemeTests" 
+        run_tests "DevToolsTests"
         ;;
     "custom") 
         echo -e "${BLUE}Running custom tests only...${NC}"
         build_project
-        run_tests "CustomTests"
+        run_tests "ExampleCustomTest"
         ;;
     "all")
         echo -e "${BLUE}Running all tests...${NC}"
