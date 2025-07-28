@@ -12,11 +12,15 @@ class NetworkRequestModel {
     var responseBody: String = ""
     var duration: TimeInterval = 0
     var size: Int = 0
+    var requestType: NetworkRequestType = .fetch
+    var connectionId: String?
+    var eventData: [String: Any] = [:]
     
-    init(url: String, method: String, headers: [String: String] = [:]) {
+    init(url: String, method: String, headers: [String: String] = [:], type: NetworkRequestType = .fetch) {
         self.url = url
         self.method = method
         self.headers = headers
+        self.requestType = type
         self.timestamp = Date()
     }
     
@@ -26,6 +30,20 @@ class NetworkRequestModel {
     }
     
     var resourceType: NetworkResourceType {
+        // First check the request type
+        switch requestType {
+        case .websocket:
+            return .websocket
+        case .eventsource:
+            return .eventsource
+        case .webrtc:
+            return .webrtc
+        case .xhr:
+            return .xhr
+        case .fetch, .navigation, .resource:
+            break // Continue to URL-based detection
+        }
+        
         guard let urlComponents = URLComponents(string: url),
               let path = urlComponents.path.split(separator: ".").last else {
             return .document
@@ -70,6 +88,25 @@ class NetworkRequestModel {
             return String(format: "%.1fs", duration)
         }
     }
+    
+    var statusText: String {
+        switch status {
+        case 200: return "OK"
+        case 201: return "Created"
+        case 204: return "No Content"
+        case 301: return "Moved Permanently"
+        case 302: return "Found"
+        case 304: return "Not Modified"
+        case 400: return "Bad Request"
+        case 401: return "Unauthorized"
+        case 403: return "Forbidden"
+        case 404: return "Not Found"
+        case 500: return "Internal Server Error"
+        case 502: return "Bad Gateway"
+        case 503: return "Service Unavailable"
+        default: return status > 0 ? "\(status)" : "Pending"
+        }
+    }
 }
 
 enum NetworkResourceType: String, CaseIterable {
@@ -81,6 +118,9 @@ enum NetworkResourceType: String, CaseIterable {
     case font = "Font"
     case xhr = "XHR"
     case media = "Media"
+    case websocket = "WS"
+    case eventsource = "SSE"
+    case webrtc = "RTC"
     case other = "Other"
     
     var emoji: String {
@@ -93,7 +133,44 @@ enum NetworkResourceType: String, CaseIterable {
         case .font: return "🔤"
         case .xhr: return "🔗"
         case .media: return "🎬"
+        case .websocket: return "🔌"
+        case .eventsource: return "📡"
+        case .webrtc: return "🎥"
         case .other: return "📎"
+        }
+    }
+}
+
+enum NetworkRequestType: String, CaseIterable {
+    case fetch = "fetch"
+    case xhr = "xhr"
+    case websocket = "websocket"
+    case eventsource = "eventsource"
+    case webrtc = "webrtc"
+    case navigation = "navigation"
+    case resource = "resource"
+    
+    var displayName: String {
+        switch self {
+        case .fetch: return "Fetch"
+        case .xhr: return "XHR"
+        case .websocket: return "WebSocket"
+        case .eventsource: return "EventSource"
+        case .webrtc: return "WebRTC"
+        case .navigation: return "Navigation"
+        case .resource: return "Resource"
+        }
+    }
+    
+    var emoji: String {
+        switch self {
+        case .fetch: return "🔄"
+        case .xhr: return "📡"
+        case .websocket: return "🔌"
+        case .eventsource: return "📻"
+        case .webrtc: return "🎥"
+        case .navigation: return "🧭"
+        case .resource: return "📦"
         }
     }
 }

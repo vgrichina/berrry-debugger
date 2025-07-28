@@ -20,7 +20,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     private var devToolsViewController: DevToolsViewController?
     private var consoleLogs: [String] = []
     private var networkRequests: [NetworkRequestModel] = []
-    private var networkInterceptor: NetworkInterceptor?
+    private var networkMonitor: NetworkMonitor?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,16 +50,20 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     private func setupWebView() {
         let config = WKWebViewConfiguration()
         
-        // Setup network interceptor
-        networkInterceptor = NetworkInterceptor()
-        networkInterceptor?.delegate = self
-        
-        // Register URL scheme handlers for HTTP and HTTPS
-        config.setURLSchemeHandler(networkInterceptor, forURLScheme: "http")
-        config.setURLSchemeHandler(networkInterceptor, forURLScheme: "https")
+        // Setup network monitor
+        networkMonitor = NetworkMonitor()
+        networkMonitor?.delegate = self
         
         // Add console message handler
         config.userContentController.add(self, name: "console")
+        
+        // Add network monitoring handler
+        config.userContentController.add(self, name: "networkMonitor")
+        
+        // Inject comprehensive network monitoring script
+        if let networkMonitor = networkMonitor {
+            config.userContentController.addUserScript(networkMonitor.comprehensiveNetworkScript)
+        }
         
         // Inject console capture script
         let consoleScript = WKUserScript(
@@ -345,7 +349,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     private func loadDefaultPage() {
-        guard let url = URL(string: "https://example.com") else { return }
+        guard let url = URL(string: "https://httpbin.org/") else { return }
         let request = URLRequest(url: url)
         webView.load(request)
         updateSecurityIndicator(for: url)
@@ -424,6 +428,19 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         // Clear network requests for main frame navigations (new page loads)
         if navigationAction.targetFrame?.isMainFrame == true {
             networkRequests.removeAll()
+            
+            // Capture the navigation request itself
+            if let url = navigationAction.request.url {
+                let navigationRequest = NetworkRequestModel(
+                    url: url.absoluteString,
+                    method: navigationAction.request.httpMethod ?? "GET",
+                    headers: navigationAction.request.allHTTPHeaderFields ?? [:],
+                    type: .navigation
+                )
+                navigationRequest.status = 200 // Will be updated when load completes
+                networkRequests.append(navigationRequest)
+            }
+            
             // Update DevTools if it's currently open
             if let devTools = devToolsViewController {
                 devTools.updateData(consoleLogs: consoleLogs, networkRequests: networkRequests, webView: webView)
@@ -447,6 +464,9 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             if consoleLogs.count > 1000 {
                 consoleLogs.removeFirst(100)
             }
+        } else if message.name == "networkMonitor",
+                  let body = message.body as? [String: Any] {
+            networkMonitor?.handleNetworkMessage(body)
         }
     }
 }
@@ -460,11 +480,16 @@ extension BrowserViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - NetworkInterceptorDelegate
-extension BrowserViewController: NetworkInterceptorDelegate {
-    func networkInterceptor(_ interceptor: NetworkInterceptor, didCaptureRequest request: NetworkRequestModel) {
+// MARK: - NetworkMonitorDelegate
+extension BrowserViewController: NetworkMonitorDelegate {
+    func networkMonitor(_ monitor: NetworkMonitor, didCaptureRequest request: NetworkRequestModel) {
         DispatchQueue.main.async {
             self.networkRequests.append(request)
+            
+            // Limit network requests to prevent memory issues
+            if self.networkRequests.count > 500 {
+                self.networkRequests.removeFirst(100)
+            }
             
             // Update DevTools if it's currently open and showing network tab
             if let devTools = self.devToolsViewController {
@@ -473,7 +498,7 @@ extension BrowserViewController: NetworkInterceptorDelegate {
         }
     }
     
-    func networkInterceptor(_ interceptor: NetworkInterceptor, didUpdateRequest request: NetworkRequestModel) {
+    func networkMonitor(_ monitor: NetworkMonitor, didUpdateRequest request: NetworkRequestModel) {
         DispatchQueue.main.async {
             // The request object is already in our array and updated by reference
             // Just refresh the DevTools display
