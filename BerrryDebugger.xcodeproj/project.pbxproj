@@ -8,31 +8,54 @@
 
 /* Begin PBXBuildFile section */
 		0B74F23BD9BE83B950768D46 /* NetworkRequestTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */; };
+		0BF4100A7119BC065F7C9EC6 /* ExampleCustomTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */; };
 		2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */; };
 		3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */; };
 		364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */; };
 		3FE79C78B8A730D9FC0817AD /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */; };
 		62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */; };
+		77D6E1C85D0D4F9AB1EF1B0D /* DevToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */; };
+		7894538BB22D88396D74DB88 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B9E525B7F52AB582C0B022 /* ScreenshotManager.swift */; };
+		8A08C1D67A554E1F4385EFD4 /* BerrryTestFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B330FCB0FA9E247A01A682A /* BerrryTestFramework.swift */; };
 		9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */; };
+		A6B6404C4D4ACE41CD0758C6 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B838035745E783416A5739 /* AppLaunchTests.swift */; };
+		AB81C4C8441DC01AFCCBBDF4 /* URLSchemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */; };
 		BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */; };
 		C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */; };
 		E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342BB5E62130C1E5792B8F85 /* Models.swift */; };
 		F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		8D9CF9B9EA1C0BC403628D4B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA438E54350C1995D427BE70 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AED922449AB0B87398C0692C;
+			remoteInfo = BerrryDebugger;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSchemeTests.swift; sourceTree = "<group>"; };
 		1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserViewController.swift; sourceTree = "<group>"; };
 		245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedContextViewController.swift; sourceTree = "<group>"; };
+		33B838035745E783416A5739 /* AppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchTests.swift; sourceTree = "<group>"; };
 		342BB5E62130C1E5792B8F85 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestTableViewCell.swift; sourceTree = "<group>"; };
 		4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsViewController.swift; sourceTree = "<group>"; };
+		4B330FCB0FA9E247A01A682A /* BerrryTestFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BerrryTestFramework.swift; sourceTree = "<group>"; };
 		52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextCopyController.swift; sourceTree = "<group>"; };
 		64A7E020A53A3F23AEE00251 /* BerrryDebugger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BerrryDebugger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		72B9E525B7F52AB582C0B022 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
+		A0B3616BF6309468F301CCF1 /* BerrryDebuggerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BerrryDebuggerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeModels.swift; sourceTree = "<group>"; };
 		A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestModels.swift; sourceTree = "<group>"; };
+		A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsTests.swift; sourceTree = "<group>"; };
 		AB70FBF433EA4B22AC5E0507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCustomTest.swift; sourceTree = "<group>"; };
 		E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -41,8 +64,46 @@
 			isa = PBXGroup;
 			children = (
 				64A7E020A53A3F23AEE00251 /* BerrryDebugger.app */,
+				A0B3616BF6309468F301CCF1 /* BerrryDebuggerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		44A2D05C15D876D1689D4F90 /* CustomTests */ = {
+			isa = PBXGroup;
+			children = (
+				E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */,
+			);
+			path = CustomTests;
+			sourceTree = "<group>";
+		};
+		609A376C34E088CBAB1D3DCC /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				44A2D05C15D876D1689D4F90 /* CustomTests */,
+				75CC204F40C711BE6E2AC2F1 /* Framework */,
+				AE31A6A56ACF5F09B1232710 /* SmokeTests */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		75CC204F40C711BE6E2AC2F1 /* Framework */ = {
+			isa = PBXGroup;
+			children = (
+				4B330FCB0FA9E247A01A682A /* BerrryTestFramework.swift */,
+				72B9E525B7F52AB582C0B022 /* ScreenshotManager.swift */,
+			);
+			path = Framework;
+			sourceTree = "<group>";
+		};
+		AE31A6A56ACF5F09B1232710 /* SmokeTests */ = {
+			isa = PBXGroup;
+			children = (
+				33B838035745E783416A5739 /* AppLaunchTests.swift */,
+				A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */,
+				086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */,
+			);
+			path = SmokeTests;
 			sourceTree = "<group>";
 		};
 		BECCA7681280A6A2A8597729 /* Sources */ = {
@@ -68,6 +129,7 @@
 			isa = PBXGroup;
 			children = (
 				BECCA7681280A6A2A8597729 /* Sources */,
+				609A376C34E088CBAB1D3DCC /* UITests */,
 				09DEFF8E80268FB442A1D7B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,6 +137,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		819F76468DC93A00755095B2 /* BerrryDebuggerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B7A2852E7FD8580C46028751 /* Build configuration list for PBXNativeTarget "BerrryDebuggerUITests" */;
+			buildPhases = (
+				DA9821C81FA36D0C1C260825 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ED69A3406C7F6F436BBD5D4C /* PBXTargetDependency */,
+			);
+			name = BerrryDebuggerUITests;
+			packageProductDependencies = (
+			);
+			productName = BerrryDebuggerUITests;
+			productReference = A0B3616BF6309468F301CCF1 /* BerrryDebuggerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		AED922449AB0B87398C0692C /* BerrryDebugger */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 58F7EF61DE2C555FF87CDF9C /* Build configuration list for PBXNativeTarget "BerrryDebugger" */;
@@ -100,6 +180,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					819F76468DC93A00755095B2 = {
+						TestTargetID = AED922449AB0B87398C0692C;
+					};
+				};
 			};
 			buildConfigurationList = 4A026D0BCBD315FE25DA8964 /* Build configuration list for PBXProject "BerrryDebugger" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -116,6 +201,7 @@
 			projectRoot = "";
 			targets = (
 				AED922449AB0B87398C0692C /* BerrryDebugger */,
+				819F76468DC93A00755095B2 /* BerrryDebuggerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -139,9 +225,48 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DA9821C81FA36D0C1C260825 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A6B6404C4D4ACE41CD0758C6 /* AppLaunchTests.swift in Sources */,
+				8A08C1D67A554E1F4385EFD4 /* BerrryTestFramework.swift in Sources */,
+				77D6E1C85D0D4F9AB1EF1B0D /* DevToolsTests.swift in Sources */,
+				0BF4100A7119BC065F7C9EC6 /* ExampleCustomTest.swift in Sources */,
+				7894538BB22D88396D74DB88 /* ScreenshotManager.swift in Sources */,
+				AB81C4C8441DC01AFCCBBDF4 /* URLSchemeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		ED69A3406C7F6F436BBD5D4C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AED922449AB0B87398C0692C /* BerrryDebugger */;
+			targetProxy = 8D9CF9B9EA1C0BC403628D4B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		4BA7E66BC57F8B720FE28D9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.berrry.debugger.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BerrryDebugger;
+			};
+			name = Release;
+		};
 		53A8D3F142C78E8E2D513752 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -181,7 +306,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_BITCODE = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -230,6 +355,24 @@
 			};
 			name = Release;
 		};
+		6B93E8C02DB2D175004EAEE6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.berrry.debugger.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BerrryDebugger;
+			};
+			name = Debug;
+		};
 		85270FE040F1D683572418B6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -270,7 +413,7 @@
 				ENABLE_BITCODE = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
@@ -330,6 +473,15 @@
 			buildConfigurations = (
 				BC0DE12B5A927F66D37D4B03 /* Debug */,
 				5D5411F086ED4C1638396892 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B7A2852E7FD8580C46028751 /* Build configuration list for PBXNativeTarget "BerrryDebuggerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B93E8C02DB2D175004EAEE6 /* Debug */,
+				4BA7E66BC57F8B720FE28D9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
