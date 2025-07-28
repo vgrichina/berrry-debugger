@@ -51,7 +51,7 @@ BerrryDebugger is a native iOS app designed for web developers who need powerful
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/berrry-debugger.git
+git clone https://github.com/vgrichina/berrry-debugger.git
 cd berrry-debugger
 ```
 
@@ -167,9 +167,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/berrry-debugger/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/berrry-debugger/discussions)
-- 📧 **Contact**: [your-email@example.com](mailto:your-email@example.com)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/vgrichina/berrry-debugger/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/vgrichina/berrry-debugger/discussions)
+- 📧 **Contact**: Open an issue for questions and support
 
 ---
 
