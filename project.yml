@@ -23,8 +23,8 @@ settings:
     STRIP_INSTALLED_PRODUCT: YES
     COPY_PHASE_STRIP: YES
     
-    # Disable unnecessary features
-    ENABLE_TESTABILITY: NO
+    # Enable testability for UI tests
+    ENABLE_TESTABILITY: YES
     
   configs:
     Debug:
@@ -76,3 +76,16 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+
+  BerrryDebuggerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - UITests
+    dependencies:
+      - target: BerrryDebugger
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.berrry.debugger.uitests
+        TEST_TARGET_NAME: BerrryDebugger

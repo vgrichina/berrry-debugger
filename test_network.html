@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Monitoring Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px 20px; }
+        .test-section { margin: 20px 0; border: 1px solid #ccc; padding: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Network Monitoring Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Fetch API Tests</h2>
+        <button onclick="testFetch()">Test Fetch</button>
+        <button onclick="testFetchPost()">Test Fetch POST</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>XHR Tests</h2>
+        <button onclick="testXHR()">Test XHR GET</button>
+        <button onclick="testXHRPost()">Test XHR POST</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Dynamic Resource Loading</h2>
+        <button onclick="loadImage()">Load Image</button>
+        <button onclick="loadScript()">Load Script</button>
+        <button onclick="loadCSS()">Load CSS</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>WebSocket Test</h2>
+        <button onclick="testWebSocket()">Test WebSocket</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        function testFetch() {
+            log('Testing fetch...');
+            fetch('https://httpbin.org/get?test=fetch')
+                .then(response => response.json())
+                .then(data => log('Fetch success: ' + JSON.stringify(data).substring(0, 100)))
+                .catch(error => log('Fetch error: ' + error));
+        }
+        
+        function testFetchPost() {
+            log('Testing fetch POST...');
+            fetch('https://httpbin.org/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ test: 'fetch-post' })
+            })
+                .then(response => response.json())
+                .then(data => log('Fetch POST success'))
+                .catch(error => log('Fetch POST error: ' + error));
+        }
+        
+        function testXHR() {
+            log('Testing XHR...');
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://httpbin.org/get?test=xhr');
+            xhr.onload = () => log('XHR success');
+            xhr.onerror = () => log('XHR error');
+            xhr.send();
+        }
+        
+        function testXHRPost() {
+            log('Testing XHR POST...');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://httpbin.org/post');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = () => log('XHR POST success');
+            xhr.onerror = () => log('XHR POST error');
+            xhr.send(JSON.stringify({ test: 'xhr-post' }));
+        }
+        
+        function loadImage() {
+            log('Loading image...');
+            const img = new Image();
+            img.onload = () => log('Image loaded');
+            img.onerror = () => log('Image failed');
+            img.src = 'https://httpbin.org/image/png?test=' + Date.now();
+        }
+        
+        function loadScript() {
+            log('Loading script...');
+            const script = document.createElement('script');
+            script.onload = () => log('Script loaded');
+            script.onerror = () => log('Script failed');
+            script.src = 'https://httpbin.org/base64/dmFyIHRlc3QgPSAnc2NyaXB0IGxvYWRlZCc7?test=' + Date.now();
+            document.head.appendChild(script);
+        }
+        
+        function loadCSS() {
+            log('Loading CSS...');
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.onload = () => log('CSS loaded');
+            link.onerror = () => log('CSS failed');
+            link.href = 'data:text/css,body{background-color:lightblue;}';
+            document.head.appendChild(link);
+        }
+        
+        function testWebSocket() {
+            log('Testing WebSocket...');
+            try {
+                const ws = new WebSocket('wss://echo.websocket.org/');
+                ws.onopen = () => {
+                    log('WebSocket connected');
+                    ws.send('Hello WebSocket!');
+                };
+                ws.onmessage = (event) => {
+                    log('WebSocket message: ' + event.data);
+                    ws.close();
+                };
+                ws.onclose = () => log('WebSocket closed');
+                ws.onerror = () => log('WebSocket error');
+            } catch (error) {
+                log('WebSocket error: ' + error);
+            }
+        }
+        
+        // Auto-run some tests on page load
+        setTimeout(() => {
+            log('Auto-running initial tests...');
+            testFetch();
+        }, 1000);
+    </script>
+</body>
+</html>
