@@ -46,6 +46,13 @@ class BerrryTestFramework {
     }
     
     func openDevTools(screenshotName: String) {
+        // Dismiss keyboard by tapping on webview to ensure FAB button is visible
+        let webView = app.webViews.firstMatch
+        if webView.exists {
+            webView.tap()
+            sleep(UInt32(1)) // Wait for keyboard to dismiss
+        }
+        
         let fabButton = app.buttons["Developer Tools"]
         XCTAssertTrue(fabButton.waitForExistence(timeout: 5), "FAB button should exist")
         
