@@ -94,3 +94,7 @@ iOSInjectionProject/
 gemini_*.txt
 build_output.txt
 network_analysis.txt
+
+# Test results and output
+test_results/
+test_output.log
