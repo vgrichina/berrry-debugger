@@ -60,9 +60,13 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         // Add network monitoring handler
         config.userContentController.add(self, name: "networkMonitor")
         
+        // Add DOM inspector handler
+        config.userContentController.add(self, name: "domInspector")
+        
         // Inject comprehensive network monitoring script
         if let networkMonitor = networkMonitor {
             config.userContentController.addUserScript(networkMonitor.comprehensiveNetworkScript)
+            config.userContentController.addUserScript(networkMonitor.domInspectionScript)
         }
         
         // Inject console capture script
@@ -350,6 +354,7 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         if devToolsViewController == nil {
             devToolsViewController = DevToolsViewController()
             devToolsViewController?.delegate = self
+            devToolsViewController?.setBrowserViewController(self)
         }
         
         devToolsViewController?.updateData(
@@ -480,6 +485,65 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
         } else if message.name == "networkMonitor",
                   let body = message.body as? [String: Any] {
             networkMonitor?.handleNetworkMessage(body)
+        } else if message.name == "domInspector",
+                  let body = message.body as? [String: Any] {
+            handleDOMInspectorMessage(body)
+        }
+    }
+    
+    // MARK: - DOM Inspector Message Handling
+    private func handleDOMInspectorMessage(_ messageBody: [String: Any]) {
+        guard let type = messageBody["type"] as? String else { return }
+        
+        DispatchQueue.main.async { [weak self] in
+            switch type {
+            case "domTreeReady":
+                if let treeData = messageBody["tree"] as? [String: Any] {
+                    self?.devToolsViewController?.updateDOMTree(treeData)
+                }
+            case "elementSelected":
+                if let elementData = messageBody["element"] as? [String: Any] {
+                    self?.devToolsViewController?.updateSelectedElement(elementData)
+                }
+            case "selectionModeEnabled":
+                print("🔍 Element selection mode enabled")
+            case "selectionModeDisabled":
+                print("🔍 Element selection mode disabled")
+            default:
+                print("🔍 Unknown DOM inspector message type: \(type)")
+            }
+        }
+    }
+    
+    // MARK: - Public Methods for DOM Inspection
+    func enableElementSelection() {
+        webView.evaluateJavaScript("window.berrryDOM?.enableElementSelection();") { result, error in
+            if let error = error {
+                print("Error enabling element selection: \(error)")
+            }
+        }
+    }
+    
+    func disableElementSelection() {
+        webView.evaluateJavaScript("window.berrryDOM?.disableElementSelection();") { result, error in
+            if let error = error {
+                print("Error disabling element selection: \(error)")
+            }
+        }
+    }
+    
+    func refreshDOMTree() {
+        webView.evaluateJavaScript("window.berrryDOM?.buildDOMTree();") { [weak self] result, error in
+            if let error = error {
+                print("Error refreshing DOM tree: \(error)")
+                return
+            }
+            
+            if let treeData = result as? [String: Any] {
+                DispatchQueue.main.async {
+                    self?.devToolsViewController?.updateDOMTree(treeData)
+                }
+            }
         }
     }
 }

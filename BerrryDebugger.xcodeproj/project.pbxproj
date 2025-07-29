@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0B74F23BD9BE83B950768D46 /* NetworkRequestTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */; };
 		0BF4100A7119BC065F7C9EC6 /* ExampleCustomTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */; };
+		25BE69B0551C3413DABFC26E /* DOMInspectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07CAC8899836CB38DBB5975 /* DOMInspectionTests.swift */; };
 		2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */; };
 		3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */; };
 		364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */; };
@@ -20,6 +21,7 @@
 		9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */; };
 		A6B6404C4D4ACE41CD0758C6 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B838035745E783416A5739 /* AppLaunchTests.swift */; };
 		AB81C4C8441DC01AFCCBBDF4 /* URLSchemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */; };
+		B54BF1A54ABCF5866E65FCEE /* DOMInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */; };
 		BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */; };
 		C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */; };
 		E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342BB5E62130C1E5792B8F85 /* Models.swift */; };
@@ -54,7 +56,9 @@
 		A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestModels.swift; sourceTree = "<group>"; };
 		A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsTests.swift; sourceTree = "<group>"; };
 		AB70FBF433EA4B22AC5E0507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C07CAC8899836CB38DBB5975 /* DOMInspectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMInspectionTests.swift; sourceTree = "<group>"; };
 		C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMInspector.swift; sourceTree = "<group>"; };
 		E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCustomTest.swift; sourceTree = "<group>"; };
 		E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -101,6 +105,7 @@
 			children = (
 				33B838035745E783416A5739 /* AppLaunchTests.swift */,
 				A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */,
+				C07CAC8899836CB38DBB5975 /* DOMInspectionTests.swift */,
 				086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */,
 			);
 			path = SmokeTests;
@@ -113,6 +118,7 @@
 				1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */,
 				52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */,
 				4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */,
+				CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */,
 				A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */,
 				E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */,
 				245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */,
@@ -214,6 +220,7 @@
 				364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */,
 				C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */,
 				F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */,
+				B54BF1A54ABCF5866E65FCEE /* DOMInspector.swift in Sources */,
 				62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */,
 				BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */,
 				2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */,
@@ -231,6 +238,7 @@
 			files = (
 				A6B6404C4D4ACE41CD0758C6 /* AppLaunchTests.swift in Sources */,
 				8A08C1D67A554E1F4385EFD4 /* BerrryTestFramework.swift in Sources */,
+				25BE69B0551C3413DABFC26E /* DOMInspectionTests.swift in Sources */,
 				77D6E1C85D0D4F9AB1EF1B0D /* DevToolsTests.swift in Sources */,
 				0BF4100A7119BC065F7C9EC6 /* ExampleCustomTest.swift in Sources */,
 				7894538BB22D88396D74DB88 /* ScreenshotManager.swift in Sources */,

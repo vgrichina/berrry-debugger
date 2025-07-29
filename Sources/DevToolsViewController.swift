@@ -19,6 +19,9 @@ class DevToolsViewController: UIViewController {
     // Tab Content Views
     private let elementsTableView = UITableView()
     private let elementsSearchBar = UISearchBar()
+    private let elementSelectButton = UIButton(type: .system)
+    private let elementDetailsView = UIView()
+    private let elementDetailsLabel = UILabel()
     private let consoleTableView = UITableView()
     private let networkTableView = UITableView()
     private let networkSearchBar = UISearchBar()
@@ -37,6 +40,11 @@ class DevToolsViewController: UIViewController {
     private var selectedDOMNode: DOMNode?
     private var searchText: String = ""
     private var networkSearchText: String = ""
+    
+    // DOM Inspector
+    private let domInspector = DOMInspector()
+    private var isElementSelectionMode = false
+    weak var browserViewController: BrowserViewController?
     
     private enum Tab: Int, CaseIterable {
         case elements = 0
@@ -224,24 +232,72 @@ class DevToolsViewController: UIViewController {
     }
     
     private func setupElementsTabLayout() {
+        // Setup element selection button
+        elementSelectButton.setTitle("Select Element", for: .normal)
+        elementSelectButton.setTitle("Cancel Selection", for: .selected)
+        elementSelectButton.backgroundColor = UIColor.systemBlue
+        elementSelectButton.setTitleColor(.white, for: .normal)
+        elementSelectButton.layer.cornerRadius = 8
+        elementSelectButton.addTarget(self, action: #selector(elementSelectButtonTapped), for: .touchUpInside)
+        elementSelectButton.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(elementSelectButton)
+        
+        // Setup search bar
+        elementsSearchBar.delegate = self
+        elementsSearchBar.placeholder = "Search elements..."
+        elementsSearchBar.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementsSearchBar)
+        
+        // Setup elements table view
+        elementsTableView.delegate = self
+        elementsTableView.dataSource = self
+        elementsTableView.register(DOMTreeTableViewCell.self, forCellReuseIdentifier: "DOMCell")
+        elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementsTableView)
         
+        // Setup element details view
+        elementDetailsView.backgroundColor = UIColor.systemGray6
+        elementDetailsView.layer.cornerRadius = 8
+        elementDetailsView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(elementDetailsView)
+        
+        elementDetailsLabel.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        elementDetailsLabel.numberOfLines = 0
+        elementDetailsLabel.text = "No element selected"
+        elementDetailsLabel.translatesAutoresizingMaskIntoConstraints = false
+        elementDetailsView.addSubview(elementDetailsLabel)
+        
         NSLayoutConstraint.activate([
+            // Element select button
+            elementSelectButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
+            elementSelectButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            elementSelectButton.widthAnchor.constraint(equalToConstant: 140),
+            elementSelectButton.heightAnchor.constraint(equalToConstant: 32),
+            
             // Search bar
-            elementsSearchBar.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            elementsSearchBar.topAnchor.constraint(equalTo: elementSelectButton.bottomAnchor, constant: 8),
             elementsSearchBar.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
             elementsSearchBar.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
             elementsSearchBar.heightAnchor.constraint(equalToConstant: 44),
             
-            // Table view
+            // Elements table view (takes 60% of remaining space)
             elementsTableView.topAnchor.constraint(equalTo: elementsSearchBar.bottomAnchor),
             elementsTableView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
             elementsTableView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
-            elementsTableView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
+            elementsTableView.heightAnchor.constraint(equalTo: contentContainer.heightAnchor, multiplier: 0.4),
+            
+            // Element details view (takes remaining space)
+            elementDetailsView.topAnchor.constraint(equalTo: elementsTableView.bottomAnchor, constant: 8),
+            elementDetailsView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 8),
+            elementDetailsView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -8),
+            elementDetailsView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -8),
+            
+            // Element details label
+            elementDetailsLabel.topAnchor.constraint(equalTo: elementDetailsView.topAnchor, constant: 8),
+            elementDetailsLabel.leadingAnchor.constraint(equalTo: elementDetailsView.leadingAnchor, constant: 8),
+            elementDetailsLabel.trailingAnchor.constraint(equalTo: elementDetailsView.trailingAnchor, constant: -8),
+            elementDetailsLabel.bottomAnchor.constraint(equalTo: elementDetailsView.bottomAnchor, constant: -8)
         ])
-        
-        loadDOMContent()
     }
     
     private func loadDOMContent() {
@@ -483,5 +539,150 @@ extension DevToolsViewController: UISearchBarDelegate {
             self.networkSearchText = ""
             updateNetworkDisplay()
         }
+    }
+}
+
+// MARK: - DOM Inspector Methods
+extension DevToolsViewController {
+    
+    @objc private func elementSelectButtonTapped() {
+        isElementSelectionMode.toggle()
+        elementSelectButton.isSelected = isElementSelectionMode
+        
+        if isElementSelectionMode {
+            browserViewController?.enableElementSelection()
+        } else {
+            browserViewController?.disableElementSelection()
+        }
+    }
+    
+    func updateDOMTree(_ treeData: [String: Any]) {
+        domInspector.updateDOMTree(treeData)
+        refreshElementsList()
+    }
+    
+    func updateSelectedElement(_ elementData: [String: Any]) {
+        domInspector.updateSelectedElement(elementData)
+        
+        if let selectedElement = domInspector.getSelectedElement() {
+            updateElementDetails(selectedElement)
+            
+            // Disable selection mode after selection
+            isElementSelectionMode = false
+            elementSelectButton.isSelected = false
+        }
+    }
+    
+    private func refreshElementsList() {
+        let allElements = domInspector.getFlattenedElements()
+        
+        // Apply search filter
+        let filteredElements = searchText.isEmpty ? 
+            allElements : 
+            domInspector.searchElements(query: searchText)
+        
+        // Update table view on main thread
+        Task { @MainActor in
+            // Convert DOMElement to DOMNode for compatibility with existing table view
+            self.flattenedDOMNodes = filteredElements.map { element in
+                let node = DOMNode(
+                    tagName: element.tagName,
+                    attributes: element.attributes,
+                    textContent: element.textContent
+                )
+                node.depth = element.depth
+                return node
+            }
+            self.elementsTableView.reloadData()
+        }
+    }
+    
+    private func updateElementDetails(_ element: DOMElement) {
+        let details = """
+        Element: \(element.tagName)
+        Selector: \(element.selector)
+        
+        Dimensions:
+        Size: \(element.dimensions.width) × \(element.dimensions.height)
+        Position: (\(element.dimensions.left), \(element.dimensions.top))
+        
+        Styles:
+        Display: \(element.styles.display)
+        Position: \(element.styles.position)
+        Color: \(element.styles.color)
+        Background: \(element.styles.backgroundColor)
+        Font: \(element.styles.fontSize) \(element.styles.fontFamily)
+        
+        Attributes:
+        \(element.attributes.map { "\($0.key): \($0.value)" }.joined(separator: "\n"))
+        
+        Text Content:
+        \(element.textContent?.prefix(200) ?? "None")
+        """
+        
+        Task { @MainActor in
+            self.elementDetailsLabel.text = details
+        }
+    }
+    
+    // Enhanced copy functionality for DOM inspector context
+    func copyDOMInspectorContext() {
+        var contextToExport = ""
+        
+        switch currentTab {
+        case .elements:
+            if let selectedElement = domInspector.getSelectedElement() {
+                contextToExport = domInspector.generateBugReportContext(
+                    selectedElement: selectedElement,
+                    consoleLogs: consoleLogs,
+                    networkRequests: networkRequests,
+                    currentURL: currentWebView?.url?.absoluteString ?? ""
+                )
+            } else {
+                contextToExport = domInspector.generatePerformanceContext(element: nil)
+            }
+        case .console:
+            contextToExport = """
+            # Console Logs Context
+            
+            ## Recent Console Output
+            \(consoleLogs.suffix(20).joined(separator: "\n"))
+            
+            ## LLM Debugging Prompt
+            Analyze these console logs for errors, warnings, and debugging information.
+            """
+        case .network:
+            let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
+            contextToExport = """
+            # Network Analysis Context
+            
+            ## Total Requests: \(networkRequests.count)
+            ## Failed Requests: \(failedRequests.count)
+            
+            ### Failed Request Details:
+            \(failedRequests.prefix(5).map { "- \($0.method) \($0.url) (\($0.status))" }.joined(separator: "\n"))
+            
+            ### Recent Successful Requests:
+            \(networkRequests.filter { $0.status >= 200 && $0.status < 400 }.suffix(5).map { "- \($0.method) \($0.url) (\($0.status))" }.joined(separator: "\n"))
+            
+            ## LLM Analysis Prompt
+            Review these network requests and identify potential issues or optimization opportunities.
+            """
+        }
+        
+        UIPasteboard.general.string = contextToExport
+        
+        // Show feedback
+        let alert = UIAlertController(title: "Copied!", message: "Context copied to clipboard for LLM analysis", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Public API for BrowserViewController
+extension DevToolsViewController {
+    
+    func setBrowserViewController(_ browser: BrowserViewController) {
+        self.browserViewController = browser
     }
 }

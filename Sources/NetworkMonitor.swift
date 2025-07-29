@@ -438,6 +438,261 @@ class NetworkMonitor: NSObject {
         )
     }
     
+    // MARK: - DOM Inspection Script
+    
+    var domInspectionScript: WKUserScript {
+        let source = """
+        (function() {
+            // Utility function to safely post messages
+            function postDOMMessage(data) {
+                try {
+                    webkit.messageHandlers.domInspector.postMessage(data);
+                } catch (e) {
+                    console.error('Failed to post DOM message:', e);
+                }
+            }
+            
+            // Generate CSS selector for element
+            function generateSelector(element) {
+                if (element.id) return '#' + element.id;
+                
+                let selector = element.tagName.toLowerCase();
+                if (element.className && element.className.trim()) {
+                    const classes = element.className.trim().split(/\\s+/).join('.');
+                    selector += '.' + classes;
+                }
+                
+                // Add nth-child if no unique identifier
+                if (!element.id && (!element.className || element.className.trim() === '')) {
+                    const parent = element.parentNode;
+                    if (parent) {
+                        const siblings = Array.from(parent.children);
+                        const index = siblings.indexOf(element) + 1;
+                        selector += ':nth-child(' + index + ')';
+                    }
+                }
+                
+                return selector;
+            }
+            
+            // Extract comprehensive element data
+            function getElementData(element) {
+                const rect = element.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(element);
+                
+                return {
+                    tagName: element.tagName,
+                    id: element.id || null,
+                    className: element.className || null,
+                    attributes: Object.fromEntries(
+                        Array.from(element.attributes).map(attr => [attr.name, attr.value])
+                    ),
+                    textContent: element.textContent ? element.textContent.substring(0, 200) : null,
+                    innerHTML: element.innerHTML ? element.innerHTML.substring(0, 500) : null,
+                    selector: generateSelector(element),
+                    dimensions: {
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height),
+                        top: Math.round(rect.top),
+                        left: Math.round(rect.left)
+                    },
+                    styles: {
+                        display: computedStyle.display,
+                        position: computedStyle.position,
+                        color: computedStyle.color,
+                        backgroundColor: computedStyle.backgroundColor,
+                        fontSize: computedStyle.fontSize,
+                        fontFamily: computedStyle.fontFamily,
+                        margin: computedStyle.margin,
+                        padding: computedStyle.padding,
+                        border: computedStyle.border,
+                        zIndex: computedStyle.zIndex
+                    }
+                };
+            }
+            
+            // Build DOM tree structure
+            function buildDOMTree(root = document.documentElement, maxDepth = 10) {
+                function traverse(element, depth = 0) {
+                    if (depth > maxDepth) return null;
+                    
+                    const data = getElementData(element);
+                    data.depth = depth;
+                    data.hasChildren = element.children.length > 0;
+                    data.childCount = element.children.length;
+                    
+                    // Only traverse children for first few levels to avoid huge trees
+                    if (depth < 3) {
+                        data.children = Array.from(element.children)
+                            .filter(child => child.nodeType === 1) // Only element nodes
+                            .map(child => traverse(child, depth + 1))
+                            .filter(child => child !== null);
+                    } else {
+                        data.children = [];
+                    }
+                    
+                    return data;
+                }
+                return traverse(root);
+            }
+            
+            // Element selection and highlighting
+            let selectionMode = false;
+            let highlightOverlay = null;
+            let selectedElement = null;
+            
+            function enableElementSelection() {
+                selectionMode = true;
+                document.body.style.cursor = 'crosshair';
+                document.addEventListener('mouseover', highlightElement, true);
+                document.addEventListener('click', selectElement, true);
+                
+                postDOMMessage({
+                    type: 'selectionModeEnabled',
+                    timestamp: Date.now()
+                });
+            }
+            
+            function disableElementSelection() {
+                selectionMode = false;
+                document.body.style.cursor = '';
+                removeHighlight();
+                document.removeEventListener('mouseover', highlightElement, true);
+                document.removeEventListener('click', selectElement, true);
+                
+                postDOMMessage({
+                    type: 'selectionModeDisabled',
+                    timestamp: Date.now()
+                });
+            }
+            
+            function highlightElement(event) {
+                if (!selectionMode) return;
+                
+                removeHighlight();
+                const element = event.target;
+                const rect = element.getBoundingClientRect();
+                
+                highlightOverlay = document.createElement('div');
+                highlightOverlay.style.cssText = `
+                    position: fixed;
+                    top: ${rect.top}px;
+                    left: ${rect.left}px;
+                    width: ${rect.width}px;
+                    height: ${rect.height}px;
+                    border: 2px solid #007AFF;
+                    background: rgba(0, 122, 255, 0.1);
+                    pointer-events: none;
+                    z-index: 999999;
+                    box-sizing: border-box;
+                `;
+                highlightOverlay.setAttribute('data-berrry-highlight', 'true');
+                document.body.appendChild(highlightOverlay);
+            }
+            
+            function selectElement(event) {
+                if (!selectionMode) return;
+                
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const element = event.target;
+                if (element.hasAttribute('data-berrry-highlight')) return;
+                
+                selectedElement = element;
+                const elementData = getElementData(element);
+                
+                postDOMMessage({
+                    type: 'elementSelected',
+                    element: elementData,
+                    timestamp: Date.now()
+                });
+                
+                disableElementSelection();
+            }
+            
+            function removeHighlight() {
+                if (highlightOverlay) {
+                    highlightOverlay.remove();
+                    highlightOverlay = null;
+                }
+            }
+            
+            // Storage inspection functions
+            function getStorageData() {
+                try {
+                    const localStorageData = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        localStorageData[key] = localStorage.getItem(key);
+                    }
+                    
+                    const sessionStorageData = {};
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        sessionStorageData[key] = sessionStorage.getItem(key);
+                    }
+                    
+                    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+                        const [key, value] = cookie.trim().split('=');
+                        if (key) acc[key] = value || '';
+                        return acc;
+                    }, {});
+                    
+                    return {
+                        localStorage: localStorageData,
+                        sessionStorage: sessionStorageData,
+                        cookies: cookies,
+                        url: window.location.href
+                    };
+                } catch (e) {
+                    return {
+                        error: 'Failed to access storage: ' + e.message,
+                        url: window.location.href
+                    };
+                }
+            }
+            
+            // Export functions to global scope for manual testing
+            window.berrryDOM = {
+                buildDOMTree,
+                enableElementSelection,
+                disableElementSelection,
+                getElementData,
+                getStorageData,
+                getSelectedElement: () => selectedElement
+            };
+            
+            console.log('🔍 BerrryDebugger DOM inspector initialized');
+            
+            // Initialize DOM tree on load
+            if (document.readyState === 'complete') {
+                const domTree = buildDOMTree();
+                postDOMMessage({
+                    type: 'domTreeReady',
+                    tree: domTree,
+                    timestamp: Date.now()
+                });
+            } else {
+                window.addEventListener('load', () => {
+                    const domTree = buildDOMTree();
+                    postDOMMessage({
+                        type: 'domTreeReady',
+                        tree: domTree,
+                        timestamp: Date.now()
+                    });
+                });
+            }
+        })();
+        """
+        
+        return WKUserScript(
+            source: source,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+    }
+    
     // MARK: - Message Handling
     
     func handleNetworkMessage(_ message: [String: Any]) {

@@ -91,14 +91,144 @@ class BerrryTestFramework {
     }
     
     func closeDevTools(screenshotName: String) {
-        // Tap outside dev tools to close or use close button if exists
-        let webView = app.webViews.firstMatch
-        if webView.exists {
-            webView.tap()
+        // Look for close button first, fallback to tapping webview
+        let closeButton = app.buttons.matching(identifier: "xmark.circle.fill").firstMatch
+        if closeButton.exists {
+            closeButton.tap()
+        } else {
+            // Tap outside dev tools to close
+            let webView = app.webViews.firstMatch
+            if webView.exists {
+                webView.tap()
+            }
         }
         
         sleep(UInt32(1))
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    // MARK: - DOM Inspection Actions
+    
+    func enableElementSelection(screenshotName: String) {
+        let selectButton = app.buttons["Select Element"]
+        XCTAssertTrue(selectButton.waitForExistence(timeout: 5), "Select Element button should exist")
+        
+        selectButton.tap()
+        sleep(UInt32(1))
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func disableElementSelection(screenshotName: String) {
+        let selectButton = app.buttons["Cancel Selection"]
+        if selectButton.exists {
+            selectButton.tap()
+        } else {
+            // Fallback to "Select Element" button if not in selection mode
+            let fallbackButton = app.buttons["Select Element"]
+            if fallbackButton.exists {
+                fallbackButton.tap()
+            }
+        }
+        
+        sleep(UInt32(1))
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func searchElements(query: String, screenshotName: String) {
+        let searchField = app.searchFields["Search elements..."]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Elements search field should exist")
+        
+        searchField.tap()
+        searchField.typeText(query)
+        
+        sleep(UInt32(1)) // Wait for search results
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func clearElementsSearch(screenshotName: String) {
+        let searchField = app.searchFields["Search elements..."]
+        if searchField.exists {
+            searchField.tap()
+            // Clear the search field
+            let clearButton = searchField.buttons["Clear text"]
+            if clearButton.exists {
+                clearButton.tap()
+            } else {
+                // Alternative: select all and delete
+                searchField.doubleTap()
+                app.keyboards.keys["delete"].tap()
+            }
+        }
+        
+        sleep(UInt32(1))
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func selectElementFromTable(index: Int = 0, screenshotName: String) {
+        let table = app.tables.firstMatch
+        XCTAssertTrue(table.waitForExistence(timeout: 5), "Elements table should exist")
+        
+        if table.cells.count > index {
+            table.cells.element(boundBy: index).tap()
+            sleep(UInt32(1))
+        }
+        
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func copyLLMContext(screenshotName: String) {
+        let copyButton = app.buttons["Copy for LLM"]
+        XCTAssertTrue(copyButton.waitForExistence(timeout: 5), "Copy for LLM button should exist")
+        
+        copyButton.tap()
+        sleep(UInt32(1)) // Wait for copy operation and potential alert
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func dismissCopyAlert(screenshotName: String) {
+        let alert = app.alerts["Copied!"]
+        if alert.waitForExistence(timeout: 3) {
+            let okButton = alert.buttons["OK"]
+            if okButton.exists {
+                okButton.tap()
+            }
+        }
+        
+        sleep(UInt32(1))
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func refreshPage(screenshotName: String) {
+        let refreshButton = app.buttons.matching(identifier: "arrow.clockwise").firstMatch
+        if refreshButton.exists {
+            refreshButton.tap()
+        } else {
+            // Alternative: reload via URL field
+            let urlField = app.textFields["URL"]
+            if urlField.exists {
+                urlField.tap()
+                app.buttons["Go"].tap()
+            }
+        }
+        
+        sleep(UInt32(3)) // Wait for page reload
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
+    func verifyElementDetailsVisible(screenshotName: String) -> Bool {
+        let detailsView = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Element:'")).firstMatch
+        let hasDetails = detailsView.exists
+        
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+        return hasDetails
+    }
+    
+    func verifyElementsTablePopulated(screenshotName: String) -> Int {
+        let table = app.tables.firstMatch
+        let cellCount = table.cells.count
+        
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+        return cellCount
     }
     
     // MARK: - Custom Action Runner
