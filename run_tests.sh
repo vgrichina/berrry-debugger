@@ -76,6 +76,15 @@ run_tests() {
     fi
 }
 
+generate_html_report() {
+    echo -e "${YELLOW}📄 Generating HTML report...${NC}"
+    if [ -x "./generate_report.sh" ]; then
+        ./generate_report.sh
+    else
+        echo -e "${RED}❌ generate_report.sh not found or not executable${NC}"
+    fi
+}
+
 show_results() {
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}📊 Test Results${NC}"
@@ -93,12 +102,21 @@ show_results() {
     # Show screenshots generated
     echo -e "${BLUE}📸 Screenshots generated:${NC}"
     if [ -d "$TEST_RESULTS_DIR" ]; then
-        ls -la "$TEST_RESULTS_DIR"/*.png 2>/dev/null | wc -l | xargs echo "Total screenshots:"
+        SCREENSHOT_COUNT=$(ls -1 "$TEST_RESULTS_DIR"/*.png 2>/dev/null | wc -l | tr -d ' ')
+        echo "Total screenshots: $SCREENSHOT_COUNT"
         echo ""
         echo -e "${YELLOW}Latest screenshots:${NC}"
         ls -lt "$TEST_RESULTS_DIR"/*.png 2>/dev/null | head -10
     else
         echo "No screenshots found"
+        SCREENSHOT_COUNT=0
+    fi
+    
+    # Generate HTML report if screenshots exist
+    if [ "$SCREENSHOT_COUNT" -gt 0 ]; then
+        generate_html_report
+        echo ""
+        echo -e "${GREEN}📋 HTML Report: file://$PWD/$TEST_RESULTS_DIR/test_report.html${NC}"
     fi
     
     echo ""
