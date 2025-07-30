@@ -267,6 +267,9 @@ class DevToolsViewController: UIViewController {
         elementDetailsLabel.translatesAutoresizingMaskIntoConstraints = false
         elementDetailsView.addSubview(elementDetailsLabel)
         
+        // Trigger DOM content loading when Elements tab is shown
+        loadDOMContent()
+        
         NSLayoutConstraint.activate([
             // Element select button
             elementSelectButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
@@ -431,10 +434,9 @@ class DevToolsViewController: UIViewController {
         case .console:
             updateConsoleDisplay()
         case .elements:
-            // Elements tab uses special handling, just reload if needed
-            if currentTab == .elements {
-                elementsTableView.reloadData()
-            }
+            // Elements tab - trigger DOM refresh and reload table
+            loadDOMContent()
+            elementsTableView.reloadData()
         }
     }
 }
