@@ -375,6 +375,29 @@ class DevToolsViewController: UIViewController {
         selectedDOMNode = node
         selectedElementSelector = node.selector
         elementsTableView.reloadData()
+        
+        // Update element details display using simplified format
+        updateElementDetailsFromDOMNode(node)
+    }
+    
+    private func updateElementDetailsFromDOMNode(_ node: DOMNode) {
+        let details = """
+        Element: \(node.tagName.uppercased())
+        Selector: \(node.selector)
+        
+        Attributes:
+        \(node.attributes.isEmpty ? "None" : node.attributes.map { "  \($0.key): \($0.value)" }.joined(separator: "\n"))
+        
+        Text Content:
+        \(node.textContent?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200) ?? "None")
+        
+        Children: \(node.children.count)
+        Depth: \(node.depth)
+        
+        Note: Select an element on the page for detailed styles and dimensions.
+        """
+        
+        elementDetailsLabel.text = details
     }
     
     private func expandCollapseDOMNode(_ node: DOMNode) {
