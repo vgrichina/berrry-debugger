@@ -4,17 +4,10 @@ import WebKit
 class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
     
     // MARK: - UI Components
-    private let urlContainerView = UIView()
-    private let securityIndicator = UIButton(type: .system)
     private let urlTextField = UITextField()
-    private let goButton = UIButton(type: .system)
-    private let backButton = UIButton(type: .system)
-    private let forwardButton = UIButton(type: .system)
-    private let refreshButton = UIButton(type: .system)
-    private let shareButton = UIButton(type: .system)
     private var webView: WKWebView!
-    private let devToolsFAB = UIButton(type: .system)
     private let progressView = UIProgressView(progressViewStyle: .default)
+    private let toolbar = UIToolbar()
     
     // MARK: - Dev Tools
     private var devToolsViewController: DevToolsViewController?
@@ -24,11 +17,41 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavigationBar()
         setupWebView()
         setupUI()
         setupConstraints()
         setupWebViewObservers()
         loadDefaultPage()
+    }
+    
+    private func setupNavigationBar() {
+        title = "BerrryDebugger"
+        
+        // Create navigation bar buttons
+        let backButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left"), style: .plain, target: self, action: #selector(goBack))
+        let forwardButton = UIBarButtonItem(image: UIImage(systemName: "arrow.right"), style: .plain, target: self, action: #selector(goForward))
+        let refreshButton = UIBarButtonItem(image: UIImage(systemName: "arrow.clockwise"), style: .plain, target: self, action: #selector(refresh))
+        let shareButton = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain, target: self, action: #selector(shareCurrentPage))
+        
+        // Set left navigation items
+        navigationItem.leftBarButtonItems = [backButton, forwardButton, refreshButton]
+        
+        // Set right navigation item
+        navigationItem.rightBarButtonItem = shareButton
+        
+        // Setup URL field as title view
+        urlTextField.borderStyle = .roundedRect
+        urlTextField.placeholder = "Search or enter URL"
+        urlTextField.keyboardType = .URL
+        urlTextField.autocapitalizationType = .none
+        urlTextField.autocorrectionType = .no
+        urlTextField.delegate = self
+        urlTextField.font = UIFont.systemFont(ofSize: 16)
+        urlTextField.accessibilityIdentifier = "URL"
+        urlTextField.returnKeyType = .go
+        
+        navigationItem.titleView = urlTextField
     }
     
     private func setupWebViewObservers() {
@@ -121,161 +144,56 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     private func setupUI() {
         view.backgroundColor = UIColor.systemBackground
         
-        // URL Container View
-        urlContainerView.backgroundColor = UIColor.systemGray6
-        urlContainerView.layer.cornerRadius = 12
-        urlContainerView.layer.borderWidth = 1
-        urlContainerView.layer.borderColor = UIColor.systemGray4.cgColor
-        urlContainerView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(urlContainerView)
-        
-        // Security Indicator
-        securityIndicator.setImage(UIImage(systemName: "lock.fill"), for: .normal)
-        securityIndicator.tintColor = UIColor.systemGreen
-        securityIndicator.addTarget(self, action: #selector(securityIndicatorTapped), for: .touchUpInside)
-        securityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        urlContainerView.addSubview(securityIndicator)
-        
-        // URL Text Field
-        urlTextField.borderStyle = .none
-        urlTextField.placeholder = "Search or enter URL"
-        urlTextField.keyboardType = .URL
-        urlTextField.autocapitalizationType = .none
-        urlTextField.autocorrectionType = .no
-        urlTextField.delegate = self
-        urlTextField.backgroundColor = UIColor.clear
-        urlTextField.font = UIFont.systemFont(ofSize: 16)
-        urlTextField.accessibilityIdentifier = "URL"
-        urlTextField.translatesAutoresizingMaskIntoConstraints = false
-        urlContainerView.addSubview(urlTextField)
-        
-        // Go Button
-        goButton.setTitle("Go", for: .normal)
-        goButton.backgroundColor = UIColor.systemBlue
-        goButton.setTitleColor(.white, for: .normal)
-        goButton.layer.cornerRadius = 8
-        goButton.accessibilityIdentifier = "Go"
-        goButton.addTarget(self, action: #selector(goButtonTapped), for: .touchUpInside)
-        goButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(goButton)
-        
-        // Navigation Buttons
-        setupNavigationButtons()
-        
-        // Progress View
+        // Progress View - attach to navigation bar
         progressView.progressTintColor = UIColor.systemBlue
         progressView.trackTintColor = UIColor.clear
         progressView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(progressView)
         
-        // Dev Tools FAB
-        devToolsFAB.setImage(UIImage(systemName: "wrench.and.screwdriver"), for: .normal)
-        devToolsFAB.backgroundColor = UIColor.systemBlue
-        devToolsFAB.tintColor = .white
-        devToolsFAB.layer.cornerRadius = 28
-        devToolsFAB.layer.shadowColor = UIColor.black.cgColor
-        devToolsFAB.layer.shadowOffset = CGSize(width: 0, height: 2)
-        devToolsFAB.layer.shadowRadius = 4
-        devToolsFAB.layer.shadowOpacity = 0.2
-        devToolsFAB.accessibilityIdentifier = "Developer Tools"
-        devToolsFAB.addTarget(self, action: #selector(showDevTools), for: .touchUpInside)
-        devToolsFAB.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(devToolsFAB)
+        // Setup toolbar
+        setupToolbar()
         
         webView.translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private func setupNavigationButtons() {
-        // Back Button
-        backButton.setImage(UIImage(systemName: "arrow.left"), for: .normal)
-        backButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(backButton)
+    private func setupToolbar() {
+        // Create toolbar items
+        let devToolsButton = UIBarButtonItem(
+            image: UIImage(systemName: "wrench.and.screwdriver"),
+            style: .plain,
+            target: self,
+            action: #selector(showDevTools)
+        )
+        devToolsButton.accessibilityIdentifier = "Developer Tools"
         
-        // Forward Button
-        forwardButton.setImage(UIImage(systemName: "arrow.right"), for: .normal)
-        forwardButton.addTarget(self, action: #selector(goForward), for: .touchUpInside)
-        forwardButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(forwardButton)
+        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         
-        // Refresh Button
-        refreshButton.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
-        refreshButton.addTarget(self, action: #selector(refresh), for: .touchUpInside)
-        refreshButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(refreshButton)
-        
-        // Share Button
-        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
-        shareButton.addTarget(self, action: #selector(shareCurrentPage), for: .touchUpInside)
-        shareButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(shareButton)
+        toolbar.items = [flexibleSpace, devToolsButton]
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(toolbar)
     }
+    
     
     // MARK: - Layout
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // URL Container
-            urlContainerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            urlContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            urlContainerView.trailingAnchor.constraint(equalTo: goButton.leadingAnchor, constant: -8),
-            urlContainerView.heightAnchor.constraint(equalToConstant: 48),
-            
-            // Security Indicator
-            securityIndicator.leadingAnchor.constraint(equalTo: urlContainerView.leadingAnchor, constant: 12),
-            securityIndicator.centerYAnchor.constraint(equalTo: urlContainerView.centerYAnchor),
-            securityIndicator.widthAnchor.constraint(equalToConstant: 24),
-            securityIndicator.heightAnchor.constraint(equalToConstant: 24),
-            
-            // URL Text Field
-            urlTextField.leadingAnchor.constraint(equalTo: securityIndicator.trailingAnchor, constant: 8),
-            urlTextField.trailingAnchor.constraint(equalTo: urlContainerView.trailingAnchor, constant: -12),
-            urlTextField.centerYAnchor.constraint(equalTo: urlContainerView.centerYAnchor),
-            urlTextField.heightAnchor.constraint(equalToConstant: 40),
-            
-            // Go Button
-            goButton.centerYAnchor.constraint(equalTo: urlContainerView.centerYAnchor),
-            goButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            goButton.widthAnchor.constraint(equalToConstant: 60),
-            goButton.heightAnchor.constraint(equalToConstant: 48),
-            
-            // Navigation Buttons
-            backButton.topAnchor.constraint(equalTo: urlContainerView.bottomAnchor, constant: 8),
-            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            backButton.widthAnchor.constraint(equalToConstant: 44),
-            backButton.heightAnchor.constraint(equalToConstant: 44),
-            
-            forwardButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            forwardButton.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 8),
-            forwardButton.widthAnchor.constraint(equalToConstant: 44),
-            forwardButton.heightAnchor.constraint(equalToConstant: 44),
-            
-            refreshButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            refreshButton.leadingAnchor.constraint(equalTo: forwardButton.trailingAnchor, constant: 8),
-            refreshButton.widthAnchor.constraint(equalToConstant: 44),
-            refreshButton.heightAnchor.constraint(equalToConstant: 44),
-            
-            shareButton.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            shareButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            shareButton.widthAnchor.constraint(equalToConstant: 44),
-            shareButton.heightAnchor.constraint(equalToConstant: 44),
-            
-            // Progress View
-            progressView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 4),
+            // Progress View - attached to navigation bar
+            progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             progressView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             progressView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             progressView.heightAnchor.constraint(equalToConstant: 2),
             
             // WebView
-            webView.topAnchor.constraint(equalTo: progressView.bottomAnchor, constant: 4),
+            webView.topAnchor.constraint(equalTo: progressView.bottomAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
             
-            // Dev Tools FAB
-            devToolsFAB.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            devToolsFAB.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            devToolsFAB.widthAnchor.constraint(equalToConstant: 56),
-            devToolsFAB.heightAnchor.constraint(equalToConstant: 56)
+            // Toolbar
+            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            toolbar.heightAnchor.constraint(equalToConstant: 44)
         ])
     }
     
@@ -299,12 +217,6 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     // MARK: - Actions
-    @objc private func goButtonTapped() {
-        guard let urlString = urlTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !urlString.isEmpty else { return }
-        
-        loadURL(urlString)
-    }
     
     @objc private func goBack() {
         webView.goBack()
@@ -326,35 +238,28 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
             applicationActivities: nil
         )
         
-        // Handle iPad presentation
+        // Handle iPad presentation - use navigation bar for popover
         if let popover = activityViewController.popoverPresentationController {
-            popover.sourceView = shareButton
-            popover.sourceRect = shareButton.bounds
+            popover.barButtonItem = navigationItem.rightBarButtonItem
         }
         
         present(activityViewController, animated: true)
     }
     
-    @objc private func securityIndicatorTapped() {
-        guard let url = webView.url else { return }
-        
-        let isSecure = url.scheme == "https"
-        let title = isSecure ? "🔒 Secure Connection" : "⚠️ Not Secure"
-        let message = isSecure ? 
-            "Your connection to this site is encrypted and secure." :
-            "Your connection to this site is not secure. Avoid entering sensitive information."
-        
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        
-        present(alert, animated: true)
-    }
     
     @objc private func showDevTools() {
         if devToolsViewController == nil {
             devToolsViewController = DevToolsViewController()
             devToolsViewController?.delegate = self
             devToolsViewController?.setBrowserViewController(self)
+        }
+        
+        // Configure sheet presentation
+        devToolsViewController?.modalPresentationStyle = .pageSheet
+        if let sheet = devToolsViewController?.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         }
         
         devToolsViewController?.updateData(
@@ -413,32 +318,31 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
     }
     
     private func updateNavigationButtons() {
-        backButton.isEnabled = webView.canGoBack
-        forwardButton.isEnabled = webView.canGoForward
-        
-        // Update button appearance based on state
-        backButton.alpha = webView.canGoBack ? 1.0 : 0.5
-        forwardButton.alpha = webView.canGoForward ? 1.0 : 0.5
+        // Update navigation bar buttons
+        if let leftItems = navigationItem.leftBarButtonItems {
+            // Back button (first item)
+            if leftItems.count > 0 {
+                leftItems[0].isEnabled = webView.canGoBack
+            }
+            // Forward button (second item)
+            if leftItems.count > 1 {
+                leftItems[1].isEnabled = webView.canGoForward
+            }
+        }
     }
     
     private func updateSecurityIndicator(for url: URL?) {
-        guard let url = url else {
-            securityIndicator.setImage(UIImage(systemName: "globe"), for: .normal)
-            securityIndicator.tintColor = UIColor.systemGray
-            urlContainerView.layer.borderColor = UIColor.systemGray4.cgColor
-            return
-        }
+        // Security indication is now handled through URL display
+        // The URL field itself shows the security state visually
+        guard let url = url else { return }
         
         let isSecure = url.scheme == "https"
         
+        // Update URL field appearance based on security
         if isSecure {
-            securityIndicator.setImage(UIImage(systemName: "lock.fill"), for: .normal)
-            securityIndicator.tintColor = UIColor.systemGreen
-            urlContainerView.layer.borderColor = UIColor.systemGreen.withAlphaComponent(0.3).cgColor
+            urlTextField.textColor = UIColor.label
         } else {
-            securityIndicator.setImage(UIImage(systemName: "exclamationmark.triangle.fill"), for: .normal)
-            securityIndicator.tintColor = UIColor.systemOrange
-            urlContainerView.layer.borderColor = UIColor.systemOrange.withAlphaComponent(0.3).cgColor
+            urlTextField.textColor = UIColor.systemOrange
         }
     }
     
@@ -551,7 +455,10 @@ class BrowserViewController: UIViewController, WKNavigationDelegate, WKScriptMes
 // MARK: - UITextFieldDelegate
 extension BrowserViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        goButtonTapped()
+        guard let urlString = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !urlString.isEmpty else { return false }
+        
+        loadURL(urlString)
         textField.resignFirstResponder()
         return true
     }

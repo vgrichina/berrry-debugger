@@ -11,7 +11,7 @@ class DevToolsViewController: UIViewController {
     weak var delegate: DevToolsViewControllerDelegate?
     
     // MARK: - UI Components
-    private let tabBar = UITabBar()
+    private let segmentedControl = UISegmentedControl(items: ["Elements", "Console", "Network"])
     private let contentContainer = UIView()
     private let copyButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
@@ -74,13 +74,27 @@ class DevToolsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        setupTabBar()
+        setupSegmentedControl()
         showTab(.elements)
     }
     
     // MARK: - UI Setup
     private func setupUI() {
-        view.backgroundColor = UIColor.systemBackground
+        // Use visual effect view for native iOS appearance
+        let blurEffect = UIBlurEffect(style: .systemMaterial)
+        let visualEffectView = UIVisualEffectView(effect: blurEffect)
+        visualEffectView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(visualEffectView)
+        view.sendSubviewToBack(visualEffectView)
+        
+        NSLayoutConstraint.activate([
+            visualEffectView.topAnchor.constraint(equalTo: view.topAnchor),
+            visualEffectView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            visualEffectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            visualEffectView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        view.backgroundColor = UIColor.clear
         
         // Close Button
         closeButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
@@ -88,11 +102,11 @@ class DevToolsViewController: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(closeButton)
         
-        // Tab Bar
-        tabBar.backgroundColor = UIColor.systemGray6
-        tabBar.delegate = self
-        tabBar.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tabBar)
+        // Segmented Control
+        segmentedControl.selectedSegmentIndex = 0
+        segmentedControl.addTarget(self, action: #selector(segmentedControlChanged), for: .valueChanged)
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(segmentedControl)
         
         // Copy Button
         copyButton.setTitle("Copy for LLM", for: .normal)
@@ -163,14 +177,14 @@ class DevToolsViewController: UIViewController {
             closeButton.widthAnchor.constraint(equalToConstant: 30),
             closeButton.heightAnchor.constraint(equalToConstant: 30),
             
-            // Tab Bar
-            tabBar.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: 10),
-            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tabBar.heightAnchor.constraint(equalToConstant: 49),
+            // Segmented Control
+            segmentedControl.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: 10),
+            segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            segmentedControl.heightAnchor.constraint(equalToConstant: 32),
             
             // Copy Button
-            copyButton.topAnchor.constraint(equalTo: tabBar.bottomAnchor, constant: 10),
+            copyButton.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 10),
             copyButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             copyButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             copyButton.heightAnchor.constraint(equalToConstant: 44),
@@ -183,21 +197,12 @@ class DevToolsViewController: UIViewController {
         ])
     }
     
-    private func setupTabBar() {
-        var tabBarItems: [UITabBarItem] = []
-        
-        for tab in Tab.allCases {
-            let item = UITabBarItem(
-                title: tab.title,
-                image: UIImage(systemName: tab.imageName),
-                tag: tab.rawValue
-            )
-            item.accessibilityIdentifier = tab.title
-            tabBarItems.append(item)
+    private func setupSegmentedControl() {
+        // Set accessibility identifiers for segments
+        for (index, tab) in Tab.allCases.enumerated() {
+            segmentedControl.setTitle(tab.title, forSegmentAt: index)
         }
-        
-        tabBar.setItems(tabBarItems, animated: false)
-        tabBar.selectedItem = tabBarItems[0]
+        segmentedControl.selectedSegmentIndex = 0
     }
     
     // MARK: - Tab Management
@@ -255,17 +260,30 @@ class DevToolsViewController: UIViewController {
         elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementsTableView)
         
-        // Setup element details view
-        elementDetailsView.backgroundColor = UIColor.systemGray6
+        // Setup element details view with visual effect
+        let detailsBlurEffect = UIBlurEffect(style: .systemThickMaterial)
+        let detailsVisualEffectView = UIVisualEffectView(effect: detailsBlurEffect)
+        detailsVisualEffectView.layer.cornerRadius = 8
+        detailsVisualEffectView.clipsToBounds = true
+        elementDetailsView.addSubview(detailsVisualEffectView)
+        elementDetailsView.backgroundColor = UIColor.clear
         elementDetailsView.layer.cornerRadius = 8
         elementDetailsView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementDetailsView)
+        
+        detailsVisualEffectView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            detailsVisualEffectView.topAnchor.constraint(equalTo: elementDetailsView.topAnchor),
+            detailsVisualEffectView.leadingAnchor.constraint(equalTo: elementDetailsView.leadingAnchor),
+            detailsVisualEffectView.trailingAnchor.constraint(equalTo: elementDetailsView.trailingAnchor),
+            detailsVisualEffectView.bottomAnchor.constraint(equalTo: elementDetailsView.bottomAnchor)
+        ])
         
         elementDetailsLabel.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
         elementDetailsLabel.numberOfLines = 0
         elementDetailsLabel.text = "No element selected"
         elementDetailsLabel.translatesAutoresizingMaskIntoConstraints = false
-        elementDetailsView.addSubview(elementDetailsLabel)
+        detailsVisualEffectView.contentView.addSubview(elementDetailsLabel)
         
         // Trigger DOM content loading when Elements tab is shown
         loadDOMContent()
@@ -340,6 +358,11 @@ class DevToolsViewController: UIViewController {
     // MARK: - Actions
     @objc private func closeButtonTapped() {
         dismiss(animated: true)
+    }
+    
+    @objc private func segmentedControlChanged() {
+        guard let tab = Tab(rawValue: segmentedControl.selectedSegmentIndex) else { return }
+        showTab(tab)
     }
     
     @objc private func copyButtonTapped() {
@@ -441,14 +464,6 @@ class DevToolsViewController: UIViewController {
     }
 }
 
-// MARK: - UITabBarDelegate
-extension DevToolsViewController: UITabBarDelegate {
-    func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
-        if let tab = Tab(rawValue: item.tag) {
-            showTab(tab)
-        }
-    }
-}
 
 // MARK: - UITableViewDataSource & UITableViewDelegate
 extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {

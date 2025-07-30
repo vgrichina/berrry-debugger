@@ -6,7 +6,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         window = UIWindow(frame: UIScreen.main.bounds)
-        window?.rootViewController = BrowserViewController()
+        
+        // Embed BrowserViewController in UINavigationController for standard iOS navigation
+        let browserViewController = BrowserViewController()
+        let navigationController = UINavigationController(rootViewController: browserViewController)
+        
+        window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
         
         // Handle URL if app was launched from URL scheme
@@ -24,7 +29,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     private func handleIncomingURL(_ url: URL) {
-        guard let browserViewController = window?.rootViewController as? BrowserViewController else {
+        // Get BrowserViewController from navigation controller
+        guard let navigationController = window?.rootViewController as? UINavigationController,
+              let browserViewController = navigationController.viewControllers.first as? BrowserViewController else {
             return
         }
         
