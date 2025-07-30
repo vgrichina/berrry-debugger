@@ -11,9 +11,8 @@ class DevToolsViewController: UIViewController {
     weak var delegate: DevToolsViewControllerDelegate?
     
     // MARK: - UI Components
-    private let segmentedControl = UISegmentedControl(items: ["Elements", "Console", "Network"])
+    private let segmentedControl = UISegmentedControl(items: ["Elements", "Console", "Network", "Context"])
     private let contentContainer = UIView()
-    private let copyButton = UIButton(type: .system)
     private let closeButton = UIButton(type: .system)
     
     // Tab Content Views
@@ -34,6 +33,7 @@ class DevToolsViewController: UIViewController {
     private var expandedNetworkRequests: Set<UUID> = []
     private var currentWebView: WKWebView?
     private var selectedElementSelector: String = ""
+    private var contextTextView: UITextView?
     private var domTreeRoot: DOMNode?
     private var flattenedDOMNodes: [DOMNode] = []
     private var filteredDOMNodes: [DOMNode] = []
@@ -50,12 +50,14 @@ class DevToolsViewController: UIViewController {
         case elements = 0
         case console = 1
         case network = 2
+        case context = 3
         
         var title: String {
             switch self {
             case .elements: return "Elements"
             case .console: return "Console"
             case .network: return "Network"
+            case .context: return "Context"
             }
         }
         
@@ -64,6 +66,7 @@ class DevToolsViewController: UIViewController {
             case .elements: return "doc.text"
             case .console: return "terminal"
             case .network: return "network"
+            case .context: return "doc.on.clipboard"
             }
         }
     }
@@ -107,15 +110,6 @@ class DevToolsViewController: UIViewController {
         segmentedControl.addTarget(self, action: #selector(segmentedControlChanged), for: .valueChanged)
         segmentedControl.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(segmentedControl)
-        
-        // Copy Button
-        copyButton.setTitle("Copy for LLM", for: .normal)
-        copyButton.backgroundColor = UIColor.systemBlue
-        copyButton.setTitleColor(.white, for: .normal)
-        copyButton.layer.cornerRadius = 8
-        copyButton.addTarget(self, action: #selector(copyButtonTapped), for: .touchUpInside)
-        copyButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(copyButton)
         
         // Content Container
         contentContainer.backgroundColor = UIColor.systemBackground
@@ -183,14 +177,8 @@ class DevToolsViewController: UIViewController {
             segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             segmentedControl.heightAnchor.constraint(equalToConstant: 32),
             
-            // Copy Button
-            copyButton.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 10),
-            copyButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            copyButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            copyButton.heightAnchor.constraint(equalToConstant: 44),
-            
             // Content Container
-            contentContainer.topAnchor.constraint(equalTo: copyButton.bottomAnchor, constant: 10),
+            contentContainer.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 10),
             contentContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -224,6 +212,9 @@ class DevToolsViewController: UIViewController {
         case .network:
             setupNetworkTabLayout()
             return // Special handling for network tab
+        case .context:
+            setupContextTabLayout()
+            return // Special handling for context tab
         }
         
         contentContainer.addSubview(contentView)
@@ -365,11 +356,6 @@ class DevToolsViewController: UIViewController {
         showTab(tab)
     }
     
-    @objc private func copyButtonTapped() {
-        let contextCopyController = ContextCopyController()
-        contextCopyController.delegate = self
-        contextCopyController.showContextCopyOptions(from: self)
-    }
     
     private func selectDOMNode(_ node: DOMNode) {
         selectedDOMNode = node
@@ -434,6 +420,278 @@ class DevToolsViewController: UIViewController {
         updateNetworkDisplay()
     }
     
+    private func setupContextTabLayout() {
+        // Create context copy options interface
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.addSubview(scrollView)
+        
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 16
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(stackView)
+        
+        // Title label
+        let titleLabel = UILabel()
+        titleLabel.text = "Context Export for LLM Analysis"
+        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.textAlignment = .center
+        stackView.addArrangedSubview(titleLabel)
+        
+        // Description label
+        let descriptionLabel = UILabel()
+        descriptionLabel.text = "Choose what to include in your context export for AI analysis:"
+        descriptionLabel.font = UIFont.systemFont(ofSize: 14)
+        descriptionLabel.textColor = UIColor.secondaryLabel
+        descriptionLabel.textAlignment = .center
+        descriptionLabel.numberOfLines = 0
+        stackView.addArrangedSubview(descriptionLabel)
+        
+        // Copy options buttons
+        let copyOptionsStack = UIStackView()
+        copyOptionsStack.axis = .vertical
+        copyOptionsStack.spacing = 12
+        stackView.addArrangedSubview(copyOptionsStack)
+        
+        // DOM + Context button
+        let domContextButton = createContextButton(
+            title: "📄 DOM + Context",
+            subtitle: "Export current page DOM with debugging context",
+            action: #selector(copyDOMContext)
+        )
+        copyOptionsStack.addArrangedSubview(domContextButton)
+        
+        // Console Logs button
+        let consoleButton = createContextButton(
+            title: "🖥️ Console Logs",
+            subtitle: "Export console output for error analysis",
+            action: #selector(copyConsoleContext)
+        )
+        copyOptionsStack.addArrangedSubview(consoleButton)
+        
+        // Network Analysis button
+        let networkButton = createContextButton(
+            title: "🌐 Network Analysis",
+            subtitle: "Export network requests and responses",
+            action: #selector(copyNetworkContext)
+        )
+        copyOptionsStack.addArrangedSubview(networkButton)
+        
+        // Full Context button
+        let fullContextButton = createContextButton(
+            title: "📋 Complete Context",
+            subtitle: "Export everything for comprehensive analysis",
+            action: #selector(copyCompleteContext)
+        )
+        copyOptionsStack.addArrangedSubview(fullContextButton)
+        
+        // Add context preview section
+        let previewLabel = UILabel()
+        previewLabel.text = "Complete Context Preview:"
+        previewLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        previewLabel.textColor = UIColor.label
+        stackView.addArrangedSubview(previewLabel)
+        
+        // Create text view to display complete context
+        let textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.isEditable = false
+        textView.font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        textView.backgroundColor = UIColor.systemGray6
+        textView.layer.cornerRadius = 8
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        textView.text = generateCompleteContext()
+        contextTextView = textView
+        stackView.addArrangedSubview(textView)
+        
+        // Setup constraints
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor),
+            
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 20),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -20),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
+            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40),
+            
+            textView.heightAnchor.constraint(equalToConstant: 300)
+        ])
+    }
+    
+    private func createContextButton(title: String, subtitle: String, action: Selector) -> UIButton {
+        let button = UIButton(type: .system)
+        button.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
+        button.layer.cornerRadius = 12
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.3).cgColor
+        
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 4
+        stackView.isUserInteractionEnabled = false
+        
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor.systemBlue
+        
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = UIFont.systemFont(ofSize: 12)
+        subtitleLabel.textColor = UIColor.secondaryLabel
+        subtitleLabel.numberOfLines = 0
+        
+        stackView.addArrangedSubview(titleLabel)
+        stackView.addArrangedSubview(subtitleLabel)
+        
+        button.addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: button.topAnchor, constant: 12),
+            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -16),
+            stackView.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -12),
+            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 60)
+        ])
+        
+        button.addTarget(self, action: action, for: .touchUpInside)
+        return button
+    }
+    
+    // MARK: - Context Copy Actions
+    
+    @objc private func copyDOMContext() {
+        // Copy DOM content directly
+        delegate?.devToolsDidRequestDOMExtraction(for: selectedElementSelector.isEmpty ? "" : selectedElementSelector) { [weak self] html in
+            DispatchQueue.main.async {
+                let context = """
+                # DOM Context Export
+                
+                ## Current URL: \(self?.currentWebView?.url?.absoluteString ?? "Unknown")
+                ## Selected Element: \(self?.selectedElementSelector ?? "Document Root")
+                
+                ## HTML Content:
+                ```html
+                \(html ?? "No content available")
+                ```
+                
+                ## Instructions for LLM:
+                Analyze this DOM structure for debugging purposes.
+                """
+                
+                UIPasteboard.general.string = context
+                self?.showCopySuccessAlert(message: "DOM context copied to clipboard")
+            }
+        }
+    }
+    
+    @objc private func copyConsoleContext() {
+        let recentLogs = consoleLogs.suffix(20)
+        let context = """
+        # Console Logs Export
+        
+        ## Recent Console Output (\(recentLogs.count) entries):
+        \(recentLogs.joined(separator: "\n"))
+        
+        ## Instructions for LLM:
+        Analyze these console logs for errors, warnings, and debugging information.
+        """
+        
+        UIPasteboard.general.string = context
+        showCopySuccessAlert(message: "Console logs copied to clipboard")
+    }
+    
+    @objc private func copyNetworkContext() {
+        let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
+        let context = """
+        # Network Analysis Export
+        
+        ## Summary:
+        - Total Requests: \(networkRequests.count)
+        - Failed Requests: \(failedRequests.count)
+        
+        ## Failed Requests:
+        \(failedRequests.prefix(5).map { "- \($0.method) \($0.url) (Status: \($0.status))" }.joined(separator: "\n"))
+        
+        ## Recent Successful Requests:
+        \(networkRequests.filter { $0.status >= 200 && $0.status < 400 }.suffix(5).map { "- \($0.method) \($0.url) (Status: \($0.status))" }.joined(separator: "\n"))
+        
+        ## Instructions for LLM:
+        Review these network requests and identify potential issues or optimization opportunities.
+        """
+        
+        UIPasteboard.general.string = context
+        showCopySuccessAlert(message: "Network analysis copied to clipboard")
+    }
+    
+    @objc private func copyFullContext() {
+        let contextCopyController = ContextCopyController()
+        contextCopyController.delegate = self
+        contextCopyController.showContextCopyOptions(from: self)
+    }
+    
+    @objc private func copyCompleteContext() {
+        UIPasteboard.general.string = generateCompleteContext()
+        showCopySuccessAlert(message: "Complete context copied to clipboard")
+    }
+    
+    private func generateCompleteContext() -> String {
+        let currentURL = currentWebView?.url?.absoluteString ?? "Unknown URL"
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+        
+        // Get recent console logs
+        let recentConsoleLogs = consoleLogs.suffix(15).joined(separator: "\n")
+        
+        // Get failed and recent network requests
+        let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
+        let recentRequests = networkRequests.suffix(10)
+        
+        // Generate comprehensive context
+        let context = """
+        # Complete Debug Context Export
+        Generated: \(timestamp)
+        Current URL: \(currentURL)
+        
+        ## Page Information
+        - Active URL: \(currentURL)
+        - Total Network Requests: \(networkRequests.count)
+        - Failed Network Requests: \(failedRequests.count)
+        - Console Log Entries: \(consoleLogs.count)
+        
+        ## Console Logs (Last 15 entries)
+        \(recentConsoleLogs.isEmpty ? "No console logs available" : recentConsoleLogs)
+        
+        ## Network Request Summary
+        ### Failed Requests (\(failedRequests.count) total):
+        \(failedRequests.prefix(8).map { "❌ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
+        
+        ### Recent Successful Requests:
+        \(recentRequests.filter { $0.status >= 200 && $0.status < 400 }.map { "✅ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
+        
+        ## Instructions for LLM Analysis:
+        This is a complete debugging context from BerrryDebugger iOS app. Please analyze:
+        1. Any console errors or warnings that indicate problems
+        2. Failed network requests and potential causes
+        3. Performance issues based on request patterns
+        4. Recommendations for debugging or fixing identified issues
+        
+        Focus on actionable insights that would help debug web application issues.
+        """
+        
+        return context
+    }
+    
+    private func showCopySuccessAlert(message: String) {
+        let alert = UIAlertController(title: "Copied!", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
     
     @objc private func clearNetworkRequests() {
         networkRequests.removeAll()
@@ -483,6 +741,9 @@ class DevToolsViewController: UIViewController {
             // Elements tab - trigger DOM refresh and reload table
             loadDOMContent()
             elementsTableView.reloadData()
+        case .context:
+            // Context tab - refresh the context content
+            contextTextView?.text = generateCompleteContext()
         }
     }
 }
@@ -716,6 +977,21 @@ extension DevToolsViewController {
             
             ## LLM Analysis Prompt
             Review these network requests and identify potential issues or optimization opportunities.
+            """
+        case .context:
+            contextToExport = """
+            # Full Context Export
+            
+            ## Current URL: \(currentWebView?.url?.absoluteString ?? "Unknown")
+            
+            ## Recent Console Logs:
+            \(consoleLogs.suffix(10).joined(separator: "\n"))
+            
+            ## Network Summary:
+            \(networkRequests.suffix(10).map { "- \($0.method) \($0.url) (\($0.status))" }.joined(separator: "\n"))
+            
+            ## LLM Analysis Prompt
+            Analyze this combined context for debugging insights.
             """
         }
         
