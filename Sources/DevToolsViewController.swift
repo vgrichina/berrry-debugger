@@ -431,7 +431,10 @@ class DevToolsViewController: UIViewController {
         case .console:
             updateConsoleDisplay()
         case .elements:
-            updateDOMDisplay()
+            // Elements tab uses special handling, just reload if needed
+            if currentTab == .elements {
+                elementsTableView.reloadData()
+            }
         }
     }
 }
