@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Monitoring Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; }
+        .results { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Network Monitoring Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Simple JSON API</h2>
+        <button onclick="testSimpleAPI()">Test httpbin.org/json</button>
+        <div id="result1" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Large Response</h2>
+        <button onclick="testLargeResponse()">Test httpbin.org/base64</button>
+        <div id="result2" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: External Resources</h2>
+        <button onclick="testExternalResources()">Load External JS/CSS</button>
+        <div id="result3" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 4: POST Request</h2>
+        <button onclick="testPostRequest()">Test POST with data</button>
+        <div id="result4" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 5: Multiple Requests</h2>
+        <button onclick="testMultipleRequests()">Fire 5 simultaneous requests</button>
+        <div id="result5" class="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Info</h2>
+        <button onclick="checkNetworkMonitoring()">Check Network Monitoring</button>
+        <div id="debug" class="results"></div>
+    </div>
+
+    <script>
+        async function testSimpleAPI() {
+            const result = document.getElementById('result1');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const start = performance.now();
+                const response = await fetch('https://httpbin.org/json');
+                const data = await response.json();
+                const end = performance.now();
+                
+                result.innerHTML = `
+                    <strong>Success!</strong><br>
+                    Status: ${response.status}<br>
+                    Size: ${JSON.stringify(data).length} chars<br>
+                    Time: ${Math.round(end - start)}ms<br>
+                    Headers: ${response.headers.get('content-type')}
+                `;
+            } catch (error) {
+                result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+        
+        async function testLargeResponse() {
+            const result = document.getElementById('result2');
+            result.innerHTML = 'Testing large response...';
+            
+            try {
+                const start = performance.now();
+                const response = await fetch('https://httpbin.org/base64/SFRUUEJJTiBpcyBhd2Vzb21l');
+                const data = await response.text();
+                const end = performance.now();
+                
+                result.innerHTML = `
+                    <strong>Success!</strong><br>
+                    Status: ${response.status}<br>
+                    Size: ${data.length} chars<br>
+                    Time: ${Math.round(end - start)}ms<br>
+                    Content preview: ${data.substring(0, 100)}...
+                `;
+            } catch (error) {
+                result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+        
+        async function testExternalResources() {
+            const result = document.getElementById('result3');
+            result.innerHTML = 'Loading external resources...';
+            
+            // Load external CSS
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+            document.head.appendChild(link);
+            
+            // Load external JS
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
+            document.head.appendChild(script);
+            
+            result.innerHTML = `
+                <strong>Resources loaded!</strong><br>
+                Check DevTools Network tab to see if they appear<br>
+                CSS: Font Awesome<br>
+                JS: jQuery
+            `;
+        }
+        
+        async function testPostRequest() {
+            const result = document.getElementById('result4');
+            result.innerHTML = 'Testing POST request...';
+            
+            try {
+                const start = performance.now();
+                const response = await fetch('https://httpbin.org/post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        test: 'data',
+                        timestamp: Date.now(),
+                        message: 'Hello from BerrryDebugger!'
+                    })
+                });
+                const data = await response.json();
+                const end = performance.now();
+                
+                result.innerHTML = `
+                    <strong>POST Success!</strong><br>
+                    Status: ${response.status}<br>
+                    Time: ${Math.round(end - start)}ms<br>
+                    Response size: ${JSON.stringify(data).length} chars<br>
+                    Echo data: ${JSON.stringify(data.json)}
+                `;
+            } catch (error) {
+                result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+        
+        async function testMultipleRequests() {
+            const result = document.getElementById('result5');
+            result.innerHTML = 'Firing multiple requests...';
+            
+            const urls = [
+                'https://httpbin.org/delay/1',
+                'https://httpbin.org/json',
+                'https://httpbin.org/uuid',
+                'https://httpbin.org/ip',
+                'https://httpbin.org/user-agent'
+            ];
+            
+            try {
+                const start = performance.now();
+                const promises = urls.map(url => fetch(url));
+                const responses = await Promise.all(promises);
+                const end = performance.now();
+                
+                result.innerHTML = `
+                    <strong>All requests completed!</strong><br>
+                    Total time: ${Math.round(end - start)}ms<br>
+                    Statuses: ${responses.map(r => r.status).join(', ')}<br>
+                    Check DevTools Network tab for details
+                `;
+            } catch (error) {
+                result.innerHTML = `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+        
+        function checkNetworkMonitoring() {
+            const debug = document.getElementById('debug');
+            
+            const hasWebkitHandlers = typeof webkit !== 'undefined' && 
+                                    webkit.messageHandlers && 
+                                    webkit.messageHandlers.networkMonitor;
+            
+            const hasBerrryDOM = typeof window.berrryDOM !== 'undefined';
+            
+            const fetchOriginal = window.fetch.toString().includes('originalFetch');
+            
+            debug.innerHTML = `
+                <strong>Debug Information:</strong><br>
+                webkit.messageHandlers.networkMonitor: ${hasWebkitHandlers ? '✅ Available' : '❌ Missing'}<br>
+                window.berrryDOM: ${hasBerrryDOM ? '✅ Available' : '❌ Missing'}<br>
+                Fetch intercepted: ${fetchOriginal ? '✅ Yes' : '❌ No'}<br>
+                User Agent: ${navigator.userAgent}<br>
+                URL: ${window.location.href}
+            `;
+        }
+        
+        // Auto-check on load
+        document.addEventListener('DOMContentLoaded', checkNetworkMonitoring);
+    </script>
+</body>
+</html>

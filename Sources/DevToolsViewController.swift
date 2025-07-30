@@ -405,6 +405,10 @@ class DevToolsViewController: UIViewController {
         networkTableView.reloadData()
     }
     
+    private func updateConsoleDisplay() {
+        consoleTableView.reloadData()
+    }
+    
     private func toggleNetworkRequestExpansion(_ request: NetworkRequestModel) {
         if expandedNetworkRequests.contains(request.id) {
             expandedNetworkRequests.remove(request.id)
@@ -420,13 +424,15 @@ class DevToolsViewController: UIViewController {
         self.networkRequests = networkRequests
         self.currentWebView = webView
         
-        // Update network display if on network tab
-        if currentTab == .network {
+        // Update current tab data without rebuilding UI
+        switch currentTab {
+        case .network:
             updateNetworkDisplay()
+        case .console:
+            updateConsoleDisplay()
+        case .elements:
+            updateDOMDisplay()
         }
-        
-        // Reload current tab
-        showTab(currentTab)
     }
 }
 

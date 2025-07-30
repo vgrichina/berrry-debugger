@@ -68,8 +68,23 @@ class NetworkMonitor: NSObject {
                 });
                 
                 return originalFetch.apply(this, arguments)
-                    .then(response => {
+                    .then(async response => {
                         const endTime = performance.now();
+                        const responseClone = response.clone();
+                        
+                        // Try to get response size
+                        let responseSize = 0;
+                        let responseText = '';
+                        try {
+                            responseText = await responseClone.text();
+                            responseSize = new Blob([responseText]).size;
+                        } catch (e) {
+                            // If we can't read the response, check Content-Length header
+                            const contentLength = response.headers.get('content-length');
+                            if (contentLength) {
+                                responseSize = parseInt(contentLength, 10) || 0;
+                            }
+                        }
                         
                         postMessage({
                             type: 'fetch',
@@ -80,7 +95,9 @@ class NetworkMonitor: NSObject {
                             headers: Object.fromEntries(response.headers.entries()),
                             url: response.url,
                             timestamp: Date.now(),
-                            duration: endTime - startTime
+                            duration: endTime - startTime,
+                            size: responseSize,
+                            responseBody: responseText.substring(0, 1000) // First 1KB for preview
                         });
                         
                         return response;
@@ -152,6 +169,7 @@ class NetworkMonitor: NSObject {
                 
                 xhr.addEventListener('load', function() {
                     const endTime = performance.now();
+                    const responseSize = xhr.responseText ? new Blob([xhr.responseText]).size : 0;
                     postMessage({
                         type: 'xhr',
                         event: 'load',
@@ -159,9 +177,10 @@ class NetworkMonitor: NSObject {
                         status: xhr.status,
                         statusText: xhr.statusText,
                         responseHeaders: xhr.getAllResponseHeaders(),
-                        responseText: xhr.responseText,
+                        responseText: xhr.responseText ? xhr.responseText.substring(0, 1000) : '',
                         timestamp: Date.now(),
-                        duration: startTime ? endTime - startTime : 0
+                        duration: startTime ? endTime - startTime : 0,
+                        size: responseSize
                     });
                 });
                 
@@ -739,7 +758,23 @@ class NetworkMonitor: NSObject {
             if let request = activeConnections[id] {
                 request.status = message["status"] as? Int ?? 0
                 request.responseHeaders = message["headers"] as? [String: String] ?? [:]
+                
+                // Debug logging for data flow issue
+                let rawDuration = message["duration"]
+                let rawSize = message["size"]
+                print("🔍 DEBUG - Message data for \(id):")
+                print("  Raw duration: \(rawDuration) (type: \(type(of: rawDuration)))")
+                print("  Raw size: \(rawSize) (type: \(type(of: rawSize)))")
+                
                 request.duration = (message["duration"] as? Double ?? 0) / 1000.0
+                request.size = message["size"] as? Int ?? 0
+                
+                print("  Set duration: \(request.duration)")
+                print("  Set size: \(request.size)")
+                
+                if let responseBody = message["responseBody"] as? String {
+                    request.responseBody = responseBody
+                }
                 delegate?.networkMonitor(self, didUpdateRequest: request)
             }
             
@@ -775,7 +810,19 @@ class NetworkMonitor: NSObject {
             if let request = activeConnections[id] {
                 request.status = message["status"] as? Int ?? 0
                 request.responseBody = message["responseText"] as? String ?? ""
+                
+                // Debug logging for XHR data flow issue
+                let rawDuration = message["duration"]
+                let rawSize = message["size"]
+                print("🔍 DEBUG XHR - Message data for \(id):")
+                print("  Raw duration: \(rawDuration) (type: \(type(of: rawDuration)))")
+                print("  Raw size: \(rawSize) (type: \(type(of: rawSize)))")
+                
                 request.duration = (message["duration"] as? Double ?? 0) / 1000.0
+                request.size = message["size"] as? Int ?? 0
+                
+                print("  Set duration: \(request.duration)")
+                print("  Set size: \(request.size)")
                 
                 // Parse response headers
                 if let headerString = message["responseHeaders"] as? String {
