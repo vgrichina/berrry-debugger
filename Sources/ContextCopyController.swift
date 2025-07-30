@@ -16,16 +16,8 @@ class ContextCopyController: NSObject {
     private var promptTemplate: String = "Debug this: {context}"
     
     func showContextCopyOptions(from viewController: UIViewController) {
-        // Show enhanced context selection with preview
-        let contextViewController = EnhancedContextViewController()
-        contextViewController.modalPresentationStyle = .pageSheet
-        
-        if let sheet = contextViewController.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.preferredCornerRadius = 16
-        }
-        
-        viewController.present(contextViewController, animated: true)
+        // Show the sophisticated alert-based interface with checkboxes and options
+        showLegacyContextSelector(from: viewController)
     }
     
     private func showLegacyContextSelector(from viewController: UIViewController) {

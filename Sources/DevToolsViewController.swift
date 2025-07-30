@@ -421,223 +421,190 @@ class DevToolsViewController: UIViewController {
     }
     
     private func setupContextTabLayout() {
-        // Create context copy options interface
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(scrollView)
         
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = 16
+        stackView.spacing = 20
         stackView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stackView)
         
-        // Title label
+        // Title
         let titleLabel = UILabel()
-        titleLabel.text = "Context Export for LLM Analysis"
-        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.text = "Context Export Configuration"
+        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
         titleLabel.textAlignment = .center
         stackView.addArrangedSubview(titleLabel)
         
-        // Description label
-        let descriptionLabel = UILabel()
-        descriptionLabel.text = "Choose what to include in your context export for AI analysis:"
-        descriptionLabel.font = UIFont.systemFont(ofSize: 14)
-        descriptionLabel.textColor = UIColor.secondaryLabel
-        descriptionLabel.textAlignment = .center
-        descriptionLabel.numberOfLines = 0
-        stackView.addArrangedSubview(descriptionLabel)
+        // Context Type Selection
+        let contextTypeLabel = UILabel()
+        contextTypeLabel.text = "Select Context Types:"
+        contextTypeLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        stackView.addArrangedSubview(contextTypeLabel)
         
-        // Copy options buttons
-        let copyOptionsStack = UIStackView()
-        copyOptionsStack.axis = .vertical
-        copyOptionsStack.spacing = 12
-        stackView.addArrangedSubview(copyOptionsStack)
+        let contextTypeStack = UIStackView()
+        contextTypeStack.axis = .vertical
+        contextTypeStack.spacing = 8
+        stackView.addArrangedSubview(contextTypeStack)
         
-        // DOM + Context button
-        let domContextButton = createContextButton(
-            title: "📄 DOM + Context",
-            subtitle: "Export current page DOM with debugging context",
-            action: #selector(copyDOMContext)
-        )
-        copyOptionsStack.addArrangedSubview(domContextButton)
+        // Create checkboxes for context types
+        let fullDOMCheckbox = createContextCheckbox(title: "Full DOM", isChecked: true)
+        let selectedElementCheckbox = createContextCheckbox(title: "Selected Element", isChecked: true)
+        let cssCheckbox = createContextCheckbox(title: "CSS Styles", isChecked: false)
+        let networkCheckbox = createContextCheckbox(title: "Network Logs", isChecked: false)
+        let consoleCheckbox = createContextCheckbox(title: "Console Logs", isChecked: false)
         
-        // Console Logs button
-        let consoleButton = createContextButton(
-            title: "🖥️ Console Logs",
-            subtitle: "Export console output for error analysis",
-            action: #selector(copyConsoleContext)
-        )
-        copyOptionsStack.addArrangedSubview(consoleButton)
+        contextTypeStack.addArrangedSubview(fullDOMCheckbox)
+        contextTypeStack.addArrangedSubview(selectedElementCheckbox)
+        contextTypeStack.addArrangedSubview(cssCheckbox)
+        contextTypeStack.addArrangedSubview(networkCheckbox)
+        contextTypeStack.addArrangedSubview(consoleCheckbox)
         
-        // Network Analysis button
-        let networkButton = createContextButton(
-            title: "🌐 Network Analysis",
-            subtitle: "Export network requests and responses",
-            action: #selector(copyNetworkContext)
-        )
-        copyOptionsStack.addArrangedSubview(networkButton)
+        // Format info (always plain text)
+        let formatLabel = UILabel()
+        formatLabel.text = "Output Format: Plain Text"
+        formatLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        formatLabel.textColor = UIColor.secondaryLabel
+        stackView.addArrangedSubview(formatLabel)
         
-        // Full Context button
-        let fullContextButton = createContextButton(
-            title: "📋 Complete Context",
-            subtitle: "Export everything for comprehensive analysis",
-            action: #selector(copyCompleteContext)
-        )
-        copyOptionsStack.addArrangedSubview(fullContextButton)
+        // Prompt Template
+        let promptLabel = UILabel()
+        promptLabel.text = "Prompt Template:"
+        promptLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        stackView.addArrangedSubview(promptLabel)
         
-        // Add context preview section
+        let promptTextView = UITextView()
+        promptTextView.text = "Debug this: {context}"
+        promptTextView.font = UIFont.systemFont(ofSize: 14)
+        promptTextView.backgroundColor = UIColor.systemGray6
+        promptTextView.layer.cornerRadius = 8
+        promptTextView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        promptTextView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addArrangedSubview(promptTextView)
+        
+        // Action Buttons
+        let buttonStack = UIStackView()
+        buttonStack.axis = .horizontal
+        buttonStack.distribution = .fillEqually
+        buttonStack.spacing = 12
+        stackView.addArrangedSubview(buttonStack)
+        
+        let previewButton = UIButton(type: .system)
+        previewButton.setTitle("Preview", for: .normal)
+        previewButton.backgroundColor = UIColor.systemBlue
+        previewButton.setTitleColor(.white, for: .normal)
+        previewButton.layer.cornerRadius = 8
+        previewButton.addTarget(self, action: #selector(previewContext), for: .touchUpInside)
+        buttonStack.addArrangedSubview(previewButton)
+        
+        let copyButton = UIButton(type: .system)
+        copyButton.setTitle("Copy", for: .normal)
+        copyButton.backgroundColor = UIColor.systemGreen
+        copyButton.setTitleColor(.white, for: .normal)
+        copyButton.layer.cornerRadius = 8
+        copyButton.addTarget(self, action: #selector(copyConfiguredContext), for: .touchUpInside)
+        buttonStack.addArrangedSubview(copyButton)
+        
+        // Context Preview
         let previewLabel = UILabel()
-        previewLabel.text = "Complete Context Preview:"
+        previewLabel.text = "Context Preview:"
         previewLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        previewLabel.textColor = UIColor.label
         stackView.addArrangedSubview(previewLabel)
         
-        // Create text view to display complete context
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.isEditable = false
-        textView.font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        textView.font = UIFont.monospacedSystemFont(ofSize: 10, weight: .regular)
         textView.backgroundColor = UIColor.systemGray6
         textView.layer.cornerRadius = 8
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
         textView.text = generateCompleteContext()
         contextTextView = textView
         stackView.addArrangedSubview(textView)
         
-        // Setup constraints
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor),
             
-            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 20),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -20),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
-            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40),
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -16),
+            stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32),
             
-            textView.heightAnchor.constraint(equalToConstant: 300)
+            promptTextView.heightAnchor.constraint(equalToConstant: 80),
+            previewButton.heightAnchor.constraint(equalToConstant: 44),
+            copyButton.heightAnchor.constraint(equalToConstant: 44),
+            textView.heightAnchor.constraint(equalToConstant: 200)
         ])
     }
     
-    private func createContextButton(title: String, subtitle: String, action: Selector) -> UIButton {
+    
+    // MARK: - Context Configuration Methods
+    
+    private func createContextCheckbox(title: String, isChecked: Bool) -> UIView {
+        let containerView = UIView()
+        
         let button = UIButton(type: .system)
-        button.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-        button.layer.cornerRadius = 12
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.3).cgColor
-        
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.spacing = 4
-        stackView.isUserInteractionEnabled = false
-        
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        titleLabel.textColor = UIColor.systemBlue
-        
-        let subtitleLabel = UILabel()
-        subtitleLabel.text = subtitle
-        subtitleLabel.font = UIFont.systemFont(ofSize: 12)
-        subtitleLabel.textColor = UIColor.secondaryLabel
-        subtitleLabel.numberOfLines = 0
-        
-        stackView.addArrangedSubview(titleLabel)
-        stackView.addArrangedSubview(subtitleLabel)
-        
-        button.addSubview(stackView)
-        stackView.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(isChecked ? "☑️ \(title)" : "☐ \(title)", for: .normal)
+        button.contentHorizontalAlignment = .left
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16)
+        button.setTitleColor(UIColor.label, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(contextTypeToggled(_:)), for: .touchUpInside)
+        containerView.addSubview(button)
         
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: button.topAnchor, constant: 12),
-            stackView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -16),
-            stackView.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -12),
-            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 60)
+            button.topAnchor.constraint(equalTo: containerView.topAnchor),
+            button.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            button.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            button.heightAnchor.constraint(equalToConstant: 32)
         ])
         
-        button.addTarget(self, action: action, for: .touchUpInside)
-        return button
+        return containerView
     }
     
-    // MARK: - Context Copy Actions
-    
-    @objc private func copyDOMContext() {
-        // Copy DOM content directly
-        delegate?.devToolsDidRequestDOMExtraction(for: selectedElementSelector.isEmpty ? "" : selectedElementSelector) { [weak self] html in
-            DispatchQueue.main.async {
-                let context = """
-                # DOM Context Export
-                
-                ## Current URL: \(self?.currentWebView?.url?.absoluteString ?? "Unknown")
-                ## Selected Element: \(self?.selectedElementSelector ?? "Document Root")
-                
-                ## HTML Content:
-                ```html
-                \(html ?? "No content available")
-                ```
-                
-                ## Instructions for LLM:
-                Analyze this DOM structure for debugging purposes.
-                """
-                
-                UIPasteboard.general.string = context
-                self?.showCopySuccessAlert(message: "DOM context copied to clipboard")
-            }
-        }
+    @objc private func contextTypeToggled(_ sender: UIButton) {
+        // Toggle checkbox state
+        let currentTitle = sender.title(for: .normal) ?? ""
+        let isCurrentlyChecked = currentTitle.hasPrefix("☑️")
+        let baseTitle = currentTitle.replacingOccurrences(of: "☑️ ", with: "").replacingOccurrences(of: "☐ ", with: "")
+        let newTitle = isCurrentlyChecked ? "☐ \(baseTitle)" : "☑️ \(baseTitle)"
+        sender.setTitle(newTitle, for: .normal)
+        
+        updateContextPreview()
     }
     
-    @objc private func copyConsoleContext() {
-        let recentLogs = consoleLogs.suffix(20)
-        let context = """
-        # Console Logs Export
+    
+    @objc private func previewContext() {
+        let contextString = generateConfiguredContext()
         
-        ## Recent Console Output (\(recentLogs.count) entries):
-        \(recentLogs.joined(separator: "\n"))
-        
-        ## Instructions for LLM:
-        Analyze these console logs for errors, warnings, and debugging information.
-        """
-        
-        UIPasteboard.general.string = context
-        showCopySuccessAlert(message: "Console logs copied to clipboard")
+        let alert = UIAlertController(title: "Context Preview", message: String(contextString.prefix(500)) + (contextString.count > 500 ? "..." : ""), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
-    @objc private func copyNetworkContext() {
-        let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
-        let context = """
-        # Network Analysis Export
+    @objc private func copyConfiguredContext() {
+        let contextString = generateConfiguredContext()
+        UIPasteboard.general.string = contextString
         
-        ## Summary:
-        - Total Requests: \(networkRequests.count)
-        - Failed Requests: \(failedRequests.count)
-        
-        ## Failed Requests:
-        \(failedRequests.prefix(5).map { "- \($0.method) \($0.url) (Status: \($0.status))" }.joined(separator: "\n"))
-        
-        ## Recent Successful Requests:
-        \(networkRequests.filter { $0.status >= 200 && $0.status < 400 }.suffix(5).map { "- \($0.method) \($0.url) (Status: \($0.status))" }.joined(separator: "\n"))
-        
-        ## Instructions for LLM:
-        Review these network requests and identify potential issues or optimization opportunities.
-        """
-        
-        UIPasteboard.general.string = context
-        showCopySuccessAlert(message: "Network analysis copied to clipboard")
+        let alert = UIAlertController(title: "Copied!", message: "Context copied to clipboard", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
-    @objc private func copyFullContext() {
-        let contextCopyController = ContextCopyController()
-        contextCopyController.delegate = self
-        contextCopyController.showContextCopyOptions(from: self)
+    private func updateContextPreview() {
+        contextTextView?.text = generateConfiguredContext()
     }
     
-    @objc private func copyCompleteContext() {
-        UIPasteboard.general.string = generateCompleteContext()
-        showCopySuccessAlert(message: "Complete context copied to clipboard")
+    private func generateConfiguredContext() -> String {
+        // For now, return the complete context - this would be enhanced to respect checkbox selections
+        return generateCompleteContext()
     }
     
     private func generateCompleteContext() -> String {
