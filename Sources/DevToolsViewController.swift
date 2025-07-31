@@ -34,10 +34,8 @@ class DevToolsViewController: UIViewController {
     private var currentWebView: WKWebView?
     private var selectedElementSelector: String = ""
     private var contextTextView: UITextView?
-    private var domTreeRoot: DOMNode?
-    private var flattenedDOMNodes: [DOMNode] = []
-    private var filteredDOMNodes: [DOMNode] = []
-    private var selectedDOMNode: DOMNode?
+    private var filteredDOMElements: [DOMElement] = []
+    private var selectedDOMElement: DOMElement?
     private var searchText: String = ""
     private var networkSearchText: String = ""
     
@@ -129,7 +127,7 @@ class DevToolsViewController: UIViewController {
         // Elements Table View
         elementsTableView.delegate = self
         elementsTableView.dataSource = self
-        elementsTableView.register(DOMTreeTableViewCell.self, forCellReuseIdentifier: DOMTreeTableViewCell.identifier)
+        elementsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "DOMElementCell")
         elementsTableView.separatorStyle = .none
         elementsTableView.backgroundColor = UIColor.systemBackground
         elementsTableView.translatesAutoresizingMaskIntoConstraints = false
@@ -247,7 +245,7 @@ class DevToolsViewController: UIViewController {
         // Setup elements table view
         elementsTableView.delegate = self
         elementsTableView.dataSource = self
-        elementsTableView.register(DOMTreeTableViewCell.self, forCellReuseIdentifier: "DOMCell")
+        elementsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "DOMCell")
         elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementsTableView)
         
@@ -277,6 +275,7 @@ class DevToolsViewController: UIViewController {
         detailsVisualEffectView.contentView.addSubview(elementDetailsLabel)
         
         // Trigger DOM content loading when Elements tab is shown
+        browserViewController?.refreshDOMTree()
         loadDOMContent()
         
         NSLayoutConstraint.activate([
@@ -313,36 +312,25 @@ class DevToolsViewController: UIViewController {
     }
     
     private func loadDOMContent() {
-        delegate?.devToolsDidRequestDOMExtraction(for: "") { [weak self] html in
-            DispatchQueue.main.async {
-                guard let self = self, let html = html else { return }
-                
-                // Parse HTML into DOM tree
-                self.domTreeRoot = DOMParser.parseHTML(html)
-                self.updateDOMDisplay()
-            }
+        // Load DOM tree from DOMInspector if available, otherwise show empty
+        if domInspector.getCurrentDOMTree() != nil {
+            let allElements = domInspector.searchElements(query: searchText)
+            // Initially show only elements up to depth 3 to keep it manageable
+            filteredDOMElements = allElements.filter { $0.depth <= 3 }
+        } else {
+            filteredDOMElements = []
         }
+        elementsTableView.reloadData()
     }
     
     private func updateDOMDisplay() {
-        guard let root = domTreeRoot else {
-            flattenedDOMNodes = []
-            elementsTableView.reloadData()
-            return
-        }
-        
-        flattenedDOMNodes = root.flattenedNodes()
-        
-        // Apply search filter if needed
+        let allElements = domInspector.searchElements(query: searchText)
+        // Show limited depth unless searching
         if searchText.isEmpty {
-            filteredDOMNodes = flattenedDOMNodes
+            filteredDOMElements = allElements.filter { $0.depth <= 3 }
         } else {
-            filteredDOMNodes = flattenedDOMNodes.filter { node in
-                node.displayName.lowercased().contains(searchText.lowercased()) ||
-                node.tagName.lowercased().contains(searchText.lowercased())
-            }
+            filteredDOMElements = allElements // Show all when searching
         }
-        
         elementsTableView.reloadData()
     }
     
@@ -357,38 +345,33 @@ class DevToolsViewController: UIViewController {
     }
     
     
-    private func selectDOMNode(_ node: DOMNode) {
-        selectedDOMNode = node
-        selectedElementSelector = node.selector
+    private func selectDOMElement(_ element: DOMElement) {
+        selectedDOMElement = element
+        selectedElementSelector = element.selector
         elementsTableView.reloadData()
         
         // Update element details display using simplified format
-        updateElementDetailsFromDOMNode(node)
+        updateElementDetailsFromDOMElement(element)
     }
     
-    private func updateElementDetailsFromDOMNode(_ node: DOMNode) {
+    private func updateElementDetailsFromDOMElement(_ element: DOMElement) {
         let details = """
-        Element: \(node.tagName.uppercased())
-        Selector: \(node.selector)
+        Element: \(element.tagName.uppercased())
+        Selector: \(element.selector)
         
         Attributes:
-        \(node.attributes.isEmpty ? "None" : node.attributes.map { "  \($0.key): \($0.value)" }.joined(separator: "\n"))
+        \(element.attributes.isEmpty ? "None" : element.attributes.map { "  \($0.key): \($0.value)" }.joined(separator: "\n"))
         
         Text Content:
-        \(node.textContent?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200) ?? "None")
+        \(element.textContent?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200) ?? "None")
         
-        Children: \(node.children.count)
-        Depth: \(node.depth)
+        Children: \(element.childCount)
+        Depth: \(element.depth)
         
         Note: Select an element on the page for detailed styles and dimensions.
         """
         
         elementDetailsLabel.text = details
-    }
-    
-    private func expandCollapseDOMNode(_ node: DOMNode) {
-        node.toggleExpanded()
-        updateDOMDisplay()
     }
     
     
@@ -705,7 +688,8 @@ class DevToolsViewController: UIViewController {
         case .console:
             updateConsoleDisplay()
         case .elements:
-            // Elements tab - trigger DOM refresh and reload table
+            // Elements tab - trigger DOM refresh from browser
+            browserViewController?.refreshDOMTree()
             loadDOMContent()
             elementsTableView.reloadData()
         case .context:
@@ -720,7 +704,7 @@ class DevToolsViewController: UIViewController {
 extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == elementsTableView {
-            return filteredDOMNodes.count
+            return filteredDOMElements.count
         } else if tableView == consoleTableView {
             return consoleLogs.count
         } else if tableView == networkTableView {
@@ -731,13 +715,25 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == elementsTableView {
-            let cell = tableView.dequeueReusableCell(withIdentifier: DOMTreeTableViewCell.identifier, for: indexPath) as! DOMTreeTableViewCell
-            let node = filteredDOMNodes[indexPath.row]
-            let isSelected = node === selectedDOMNode
+            let cell = tableView.dequeueReusableCell(withIdentifier: "DOMElementCell", for: indexPath)
+            let element = filteredDOMElements[indexPath.row]
+            let isSelected = element.selector == selectedDOMElement?.selector
             
-            cell.configure(with: node, isSelected: isSelected) { [weak self] node in
-                self?.expandCollapseDOMNode(node)
+            // Create display name with indentation for depth
+            let indent = String(repeating: "  ", count: element.depth)
+            var displayName = "\(indent)\(element.tagName.lowercased())"
+            
+            if let id = element.id, !id.isEmpty {
+                displayName += "#\(id)"
             }
+            
+            if let className = element.className, !className.isEmpty {
+                let classes = className.split(separator: " ").prefix(2).joined(separator: " ")
+                displayName += ".\(classes.replacingOccurrences(of: " ", with: "."))"
+            }
+            
+            cell.textLabel?.text = displayName
+            cell.backgroundColor = isSelected ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.clear
             
             return cell
         } else if tableView == consoleTableView {
@@ -764,8 +760,8 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         
         if tableView == elementsTableView {
-            let node = filteredDOMNodes[indexPath.row]
-            selectDOMNode(node)
+            let element = filteredDOMElements[indexPath.row]
+            selectDOMElement(element)
         }
     }
 }
@@ -860,16 +856,8 @@ extension DevToolsViewController {
         
         // Update table view on main thread
         Task { @MainActor in
-            // Convert DOMElement to DOMNode for compatibility with existing table view
-            self.flattenedDOMNodes = filteredElements.map { element in
-                let node = DOMNode(
-                    tagName: element.tagName,
-                    attributes: element.attributes,
-                    textContent: element.textContent
-                )
-                node.depth = element.depth
-                return node
-            }
+            // Update filtered elements directly
+            self.filteredDOMElements = filteredElements
             self.elementsTableView.reloadData()
         }
     }

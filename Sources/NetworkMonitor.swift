@@ -540,15 +540,11 @@ class NetworkMonitor: NSObject {
                     data.hasChildren = element.children.length > 0;
                     data.childCount = element.children.length;
                     
-                    // Only traverse children for first few levels to avoid huge trees
-                    if (depth < 3) {
-                        data.children = Array.from(element.children)
-                            .filter(child => child.nodeType === 1) // Only element nodes
-                            .map(child => traverse(child, depth + 1))
-                            .filter(child => child !== null);
-                    } else {
-                        data.children = [];
-                    }
+                    // Always traverse all children to maintain proper hierarchy
+                    data.children = Array.from(element.children)
+                        .filter(child => child.nodeType === 1) // Only element nodes
+                        .map(child => traverse(child, depth + 1))
+                        .filter(child => child !== null);
                     
                     return data;
                 }
