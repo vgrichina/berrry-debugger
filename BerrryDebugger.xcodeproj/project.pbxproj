@@ -14,15 +14,18 @@
 		3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */; };
 		364E42A9C714BCCC2BB6F760 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */; };
 		3FE79C78B8A730D9FC0817AD /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */; };
-		62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */; };
+		47C0A74F525F9B21E9CEAF6E /* NetworkMonitoringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4F6F6F632E0CF8BEF9D02B /* NetworkMonitoringTests.swift */; };
 		77D6E1C85D0D4F9AB1EF1B0D /* DevToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */; };
 		7894538BB22D88396D74DB88 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B9E525B7F52AB582C0B022 /* ScreenshotManager.swift */; };
+		7C04A24C9E5FA7D955786081 /* LazyDOMTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB577F5737956A282B3DDEA4 /* LazyDOMTableViewCell.swift */; };
 		8A08C1D67A554E1F4385EFD4 /* BerrryTestFramework.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B330FCB0FA9E247A01A682A /* BerrryTestFramework.swift */; };
 		9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */; };
+		9FF63FDA9DB8FDA315A09F53 /* LazyDOMInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B53C1AF71F0BC83C014A735 /* LazyDOMInspector.swift */; };
+		A47B231E939B9D6A52FFF87B /* lazy-dom.js in Resources */ = {isa = PBXBuildFile; fileRef = 4838F56AD5D4B36085906332 /* lazy-dom.js */; };
 		A6B6404C4D4ACE41CD0758C6 /* AppLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B838035745E783416A5739 /* AppLaunchTests.swift */; };
 		AB81C4C8441DC01AFCCBBDF4 /* URLSchemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */; };
 		B54BF1A54ABCF5866E65FCEE /* DOMInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */; };
-		BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */; };
+		C0CD020B3EF9B9FD438B5E2D /* LazyDOMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727DD9D086E59AEAD360605A /* LazyDOMTests.swift */; };
 		C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */; };
 		E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342BB5E62130C1E5792B8F85 /* Models.swift */; };
 		F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */; };
@@ -42,25 +45,28 @@
 		086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSchemeTests.swift; sourceTree = "<group>"; };
 		1563DE6E1C0757DBB1502D0B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1AED59A7E03FAE1D18652F08 /* BrowserViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserViewController.swift; sourceTree = "<group>"; };
+		1B53C1AF71F0BC83C014A735 /* LazyDOMInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyDOMInspector.swift; sourceTree = "<group>"; };
 		245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedContextViewController.swift; sourceTree = "<group>"; };
 		33B838035745E783416A5739 /* AppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchTests.swift; sourceTree = "<group>"; };
 		342BB5E62130C1E5792B8F85 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		35F39413C27875029EF013E4 /* NetworkRequestTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestTableViewCell.swift; sourceTree = "<group>"; };
 		4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsViewController.swift; sourceTree = "<group>"; };
+		4838F56AD5D4B36085906332 /* lazy-dom.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "lazy-dom.js"; sourceTree = "<group>"; };
 		4B330FCB0FA9E247A01A682A /* BerrryTestFramework.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BerrryTestFramework.swift; sourceTree = "<group>"; };
 		52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextCopyController.swift; sourceTree = "<group>"; };
 		64A7E020A53A3F23AEE00251 /* BerrryDebugger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BerrryDebugger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		727DD9D086E59AEAD360605A /* LazyDOMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyDOMTests.swift; sourceTree = "<group>"; };
 		72B9E525B7F52AB582C0B022 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
 		A0B3616BF6309468F301CCF1 /* BerrryDebuggerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BerrryDebuggerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeModels.swift; sourceTree = "<group>"; };
 		A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestModels.swift; sourceTree = "<group>"; };
 		A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevToolsTests.swift; sourceTree = "<group>"; };
 		AB70FBF433EA4B22AC5E0507 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		BD4F6F6F632E0CF8BEF9D02B /* NetworkMonitoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitoringTests.swift; sourceTree = "<group>"; };
 		C07CAC8899836CB38DBB5975 /* DOMInspectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMInspectionTests.swift; sourceTree = "<group>"; };
 		C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMInspector.swift; sourceTree = "<group>"; };
 		E0A7E48927CB04944CBAEBE9 /* ExampleCustomTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCustomTest.swift; sourceTree = "<group>"; };
-		E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOMTreeTableViewCell.swift; sourceTree = "<group>"; };
+		FB577F5737956A282B3DDEA4 /* LazyDOMTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyDOMTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -106,6 +112,8 @@
 				33B838035745E783416A5739 /* AppLaunchTests.swift */,
 				A94FA58CF27C38C886C0BCAB /* DevToolsTests.swift */,
 				C07CAC8899836CB38DBB5975 /* DOMInspectionTests.swift */,
+				727DD9D086E59AEAD360605A /* LazyDOMTests.swift */,
+				BD4F6F6F632E0CF8BEF9D02B /* NetworkMonitoringTests.swift */,
 				086CB4376AF63ED1E612D750 /* URLSchemeTests.swift */,
 			);
 			path = SmokeTests;
@@ -119,10 +127,11 @@
 				52D3BBABAD841A31E33D5B7A /* ContextCopyController.swift */,
 				4767E8FF2270CDDC608E09DE /* DevToolsViewController.swift */,
 				CE0C087FDAA1DC36663FE654 /* DOMInspector.swift */,
-				A0DD562E5A87DB7639EC6DA3 /* DOMTreeModels.swift */,
-				E87470C3C77C6A0C0146AD36 /* DOMTreeTableViewCell.swift */,
 				245EBB5F1C4E15FC66DB7FC8 /* EnhancedContextViewController.swift */,
 				AB70FBF433EA4B22AC5E0507 /* Info.plist */,
+				4838F56AD5D4B36085906332 /* lazy-dom.js */,
+				1B53C1AF71F0BC83C014A735 /* LazyDOMInspector.swift */,
+				FB577F5737956A282B3DDEA4 /* LazyDOMTableViewCell.swift */,
 				342BB5E62130C1E5792B8F85 /* Models.swift */,
 				C84C0000F5FDFC19B0418543 /* NetworkMonitor.swift */,
 				A5A7F19191B1841F55CA1CC1 /* NetworkRequestModels.swift */,
@@ -166,6 +175,7 @@
 			buildConfigurationList = 58F7EF61DE2C555FF87CDF9C /* Build configuration list for PBXNativeTarget "BerrryDebugger" */;
 			buildPhases = (
 				6A83BCBC94DD5FE6EAF3E0BC /* Sources */,
+				A3BECA95CCD2EF8DEC8A83D0 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -212,6 +222,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A3BECA95CCD2EF8DEC8A83D0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A47B231E939B9D6A52FFF87B /* lazy-dom.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6A83BCBC94DD5FE6EAF3E0BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -221,10 +242,10 @@
 				C7881202DB53E6CAC7CC9B34 /* BrowserViewController.swift in Sources */,
 				F89C7C220331D647817FD15A /* ContextCopyController.swift in Sources */,
 				B54BF1A54ABCF5866E65FCEE /* DOMInspector.swift in Sources */,
-				62F55F8841C337DECF488535 /* DOMTreeModels.swift in Sources */,
-				BFDF6BBB01F76DF9B5BF55F1 /* DOMTreeTableViewCell.swift in Sources */,
 				2ADFBF1FF38F6ADB3F00D686 /* DevToolsViewController.swift in Sources */,
 				3284CD973109A1844A1D79ED /* EnhancedContextViewController.swift in Sources */,
+				9FF63FDA9DB8FDA315A09F53 /* LazyDOMInspector.swift in Sources */,
+				7C04A24C9E5FA7D955786081 /* LazyDOMTableViewCell.swift in Sources */,
 				E85A6B5E3333DFFEAC7DF1E2 /* Models.swift in Sources */,
 				3FE79C78B8A730D9FC0817AD /* NetworkMonitor.swift in Sources */,
 				9209B3EEF636B86C457EC3C1 /* NetworkRequestModels.swift in Sources */,
@@ -241,6 +262,8 @@
 				25BE69B0551C3413DABFC26E /* DOMInspectionTests.swift in Sources */,
 				77D6E1C85D0D4F9AB1EF1B0D /* DevToolsTests.swift in Sources */,
 				0BF4100A7119BC065F7C9EC6 /* ExampleCustomTest.swift in Sources */,
+				C0CD020B3EF9B9FD438B5E2D /* LazyDOMTests.swift in Sources */,
+				47C0A74F525F9B21E9CEAF6E /* NetworkMonitoringTests.swift in Sources */,
 				7894538BB22D88396D74DB88 /* ScreenshotManager.swift in Sources */,
 				AB81C4C8441DC01AFCCBBDF4 /* URLSchemeTests.swift in Sources */,
 			);
