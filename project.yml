@@ -42,6 +42,8 @@ targets:
     resources:
       - path: Resources
         optional: true
+      - path: Sources/lazy-dom.js
+        type: file
     info:
       path: Sources/Info.plist
       properties:

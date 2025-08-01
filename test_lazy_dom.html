@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lazy DOM Loading Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .nested-content {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #007AFF;
+        }
+        
+        .deep-nesting {
+            margin-left: 20px;
+            padding: 8px;
+            background-color: rgba(0, 122, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        .card {
+            background: #fff;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 12px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .grid-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="main-title">🌳 Lazy DOM Loading Test Page</h1>
+            <p class="subtitle">This page tests BerrryDebugger's lazy DOM inspection capabilities with complex nested structures.</p>
+        </header>
+
+        <main>
+            <!-- Section 1: Complex Form -->
+            <section class="section" id="form-section">
+                <h2>📝 Complex Form Structure</h2>
+                <form id="test-form" class="form-container">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Enter username" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="user@example.com" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category">
+                            <option value="web">Web Development</option>
+                            <option value="mobile">Mobile Development</option>
+                            <option value="design">UI/UX Design</option>
+                            <option value="data">Data Science</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="button primary">Submit Form</button>
+                        <button type="reset" class="button secondary">Reset</button>
+                        <button type="button" class="button" onclick="validateForm()">Validate</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Section 2: Grid Layout -->
+            <section class="section" id="grid-section">
+                <h2>📱 Grid Layout Test</h2>
+                <div class="grid" id="feature-grid">
+                    <div class="grid-item" data-feature="lazy-loading">
+                        <h3>Lazy Loading</h3>
+                        <p>Load DOM elements on-demand for better performance</p>
+                        <div class="nested-content">
+                            <span class="status active">Active</span>
+                            <div class="deep-nesting">
+                                <small>Supports deep nesting levels</small>
+                                <div class="deeper">
+                                    <em>Even deeper nesting</em>
+                                    <div class="deepest">
+                                        <strong>Maximum depth test</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-item" data-feature="search">
+                        <h3>Smart Search</h3>
+                        <p>Find elements by tag, class, ID, or content</p>
+                        <div class="nested-content">
+                            <span class="status active">Active</span>
+                            <ul class="search-features">
+                                <li>Tag name matching</li>
+                                <li>Class name search</li>
+                                <li>ID targeting</li>
+                                <li>Text content search</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-item" data-feature="highlighting">
+                        <h3>Element Highlighting</h3>
+                        <p>Visual feedback for selected elements</p>
+                        <div class="nested-content">
+                            <span class="status pending">Testing</span>
+                            <div class="highlight-demo">
+                                <p>This element can be highlighted</p>
+                                <span class="highlight-target">Target element</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-item" data-feature="performance">
+                        <h3>Performance</h3>
+                        <p>Optimized for large DOM trees</p>
+                        <div class="nested-content">
+                            <span class="status active">Optimized</span>
+                            <div class="metrics">
+                                <div class="metric">
+                                    <label>Memory Usage</label>
+                                    <span>Low</span>
+                                </div>
+                                <div class="metric">
+                                    <label>Load Time</label>
+                                    <span>Fast</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Data Table -->
+            <section class="section" id="table-section">
+                <h2>📊 Data Table Structure</h2>
+                <div class="table-container">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Feature</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-id="1">
+                                <td>001</td>
+                                <td>DOM Traversal</td>
+                                <td>Navigate through DOM hierarchy efficiently</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <button class="button small">Edit</button>
+                                    <button class="button small">Delete</button>
+                                </td>
+                            </tr>
+                            <tr data-id="2">
+                                <td>002</td>
+                                <td>Lazy Loading</td>
+                                <td>Load elements only when needed</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <button class="button small">Edit</button>
+                                    <button class="button small">Delete</button>
+                                </td>
+                            </tr>
+                            <tr data-id="3">
+                                <td>003</td>
+                                <td>Element Search</td>
+                                <td>Find elements by various criteria</td>
+                                <td><span class="status pending">Testing</span></td>
+                                <td>
+                                    <button class="button small">Edit</button>
+                                    <button class="button small">Delete</button>
+                                </td>
+                            </tr>
+                            <tr data-id="4">
+                                <td>004</td>
+                                <td>Visual Feedback</td>
+                                <td>Highlight selected elements on page</td>
+                                <td><span class="status inactive">Disabled</span></td>
+                                <td>
+                                    <button class="button small">Edit</button>
+                                    <button class="button small">Delete</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 4: Deep Nesting Test -->
+            <section class="section" id="nesting-section">
+                <h2>🔄 Deep Nesting Challenge</h2>
+                <div class="nesting-test" id="deep-nesting-root">
+                    <div class="level-1" data-level="1">
+                        <h4>Level 1 Container</h4>
+                        <div class="level-2" data-level="2">
+                            <p>Level 2 Content</p>
+                            <div class="level-3" data-level="3">
+                                <span>Level 3 Element</span>
+                                <div class="level-4" data-level="4">
+                                    <em>Level 4 Text</em>
+                                    <div class="level-5" data-level="5">
+                                        <strong>Level 5 Strong</strong>
+                                        <div class="level-6" data-level="6">
+                                            <small>Level 6 Small</small>
+                                            <div class="level-7" data-level="7">
+                                                <code>Level 7 Code</code>
+                                                <div class="level-8" data-level="8">
+                                                    <mark>Level 8 Highlight</mark>
+                                                    <div class="level-9" data-level="9">
+                                                        <sup>Level 9 Superscript</sup>
+                                                        <div class="level-10" data-level="10">
+                                                            🎯 Maximum depth reached!
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer id="page-footer">
+            <div class="footer-content">
+                <p>&copy; 2024 BerrryDebugger - Lazy DOM Loading Test</p>
+                <div class="footer-links">
+                    <a href="#form-section">Forms</a>
+                    <a href="#grid-section">Grid</a>
+                    <a href="#table-section">Tables</a>
+                    <a href="#nesting-section">Nesting</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Add some dynamic content to test JavaScript interaction
+        function validateForm() {
+            const form = document.getElementById('test-form');
+            const inputs = form.querySelectorAll('input[required]');
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = '#dc3545';
+                    isValid = false;
+                } else {
+                    input.style.borderColor = '#28a745';
+                }
+            });
+            
+            alert(isValid ? 'Form is valid!' : 'Please fill in all required fields.');
+        }
+        
+        // Test LazyDOM functions when available
+        function testLazyDOM() {
+            if (window.LazyDOM) {
+                console.log('🌳 LazyDOM is available!');
+                console.log('Root elements:', window.LazyDOM.getRootElements());
+                console.log('Page stats:', window.LazyDOM.getPageStats());
+                
+                // Test search functionality
+                const searchResults = window.LazyDOM.searchElements('button');
+                console.log('Search results for "button":', searchResults);
+                
+                // Test element highlighting
+                const firstButton = document.querySelector('.button');
+                if (firstButton) {
+                    const selector = window.LazyDOM.generateSelector(firstButton);
+                    console.log('Button selector:', selector);
+                    setTimeout(() => {
+                        window.LazyDOM.highlightElement(selector);
+                        setTimeout(() => {
+                            window.LazyDOM.removeHighlights();
+                        }, 2000);
+                    }, 1000);
+                }
+            } else {
+                console.log('⚠️ LazyDOM not yet available, retrying...');
+                setTimeout(testLazyDOM, 500);
+            }
+        }
+        
+        // Start testing when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 Test page loaded');
+            testLazyDOM();
+        });
+        
+        // Generate more elements dynamically for stress testing
+        function generateMoreElements() {
+            const container = document.createElement('div');
+            container.className = 'dynamic-content';
+            container.innerHTML = '<h3>Dynamic Content</h3>';
+            
+            for (let i = 0; i < 20; i++) {
+                const item = document.createElement('div');
+                item.className = `dynamic-item-${i}`;
+                item.innerHTML = `
+                    <h4>Dynamic Item ${i}</h4>
+                    <p>This is dynamically generated content for testing.</p>
+                    <ul>
+                        <li>Property A: Value ${i * 2}</li>
+                        <li>Property B: Value ${i * 3}</li>
+                        <li>Property C: Value ${i * 5}</li>
+                    </ul>
+                `;
+                container.appendChild(item);
+            }
+            
+            document.querySelector('.container').appendChild(container);
+            console.log('➕ Added 20 dynamic elements');
+        }
+        
+        // Add dynamic elements after a delay
+        setTimeout(generateMoreElements, 2000);
+    </script>
+</body>
+</html>

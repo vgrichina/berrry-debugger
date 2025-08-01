@@ -13,8 +13,22 @@ class NetworkMonitor: NSObject {
     
     // MARK: - JavaScript Injection
     
+    private func loadJavaScriptFile(named fileName: String) -> String? {
+        guard let path = Bundle.main.path(forResource: fileName, ofType: "js") else {
+            print("⚠️ Could not find JavaScript file: \(fileName).js")
+            return nil
+        }
+        
+        do {
+            return try String(contentsOfFile: path, encoding: .utf8)
+        } catch {
+            print("⚠️ Could not load JavaScript file: \(error)")
+            return nil
+        }
+    }
+    
     var comprehensiveNetworkScript: WKUserScript {
-        let source = """
+        var source = """
         (function() {
             // Utility function to generate unique IDs
             function generateId() {
@@ -449,6 +463,11 @@ class NetworkMonitor: NSObject {
             });
         })();
         """
+        
+        // Append lazy DOM functions from external file
+        if let lazyDOMScript = loadJavaScriptFile(named: "lazy-dom") {
+            source += "\n\n" + lazyDOMScript
+        }
         
         return WKUserScript(
             source: source,
