@@ -195,12 +195,8 @@ class LazyDOMTableViewCell: UITableViewCell {
             childCountLabel.isHidden = true
         }
         
-        // Visual feedback for selected state
-        if element.selector == (backgroundColor as? UIColor) {
-            backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-        } else {
-            backgroundColor = UIColor.systemBackground
-        }
+        // Visual feedback for selected state - use default background
+        backgroundColor = UIColor.systemBackground
     }
     
     func setSelected(_ element: LazyDOMElement) {
