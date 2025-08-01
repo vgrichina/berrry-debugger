@@ -150,11 +150,11 @@ class DOMInspectionTests: XCTestCase {
         sleep(UInt32(2))
         
         framework.openDevTools(screenshotName: "devtools_for_copy")
-        framework.tapElementsTab(screenshotName: "elements_for_copy")
+        framework.tapContextTab(screenshotName: "context_for_copy")
         
         // Test copy button exists and can be tapped
-        let copyButton = app.buttons["Copy for LLM"]
-        XCTAssertTrue(copyButton.exists, "Copy for LLM button should exist")
+        let copyButton = app.buttons["Copy"]
+        XCTAssertTrue(copyButton.exists, "Copy button should exist")
         
         copyButton.tap()
         framework.screenshotManager.takeScreenshot(name: "copy_button_tapped", testCase: "DOMInspectionTests")
@@ -208,12 +208,8 @@ class DOMInspectionTests: XCTestCase {
             framework.tapElementsTab(screenshotName: "stability_elements_\(i)")
             
             // Toggle element selection mode
-            let selectButton = app.buttons["Select Element"]
-            if selectButton.exists {
-                selectButton.tap()
-                sleep(1)
-                selectButton.tap()
-            }
+            framework.enableElementSelection(screenshotName: "selection_enabled_\(i)")
+            framework.disableElementSelection(screenshotName: "selection_disabled_\(i)")
             
             framework.tapNetworkTab(screenshotName: "stability_network_\(i)")
             framework.tapConsoleTab(screenshotName: "stability_console_\(i)")
@@ -238,9 +234,7 @@ class DOMInspectionTests: XCTestCase {
         
         // Start in Elements tab, enable selection
         framework.tapElementsTab(screenshotName: "elements_tab")
-        let selectButton = app.buttons["Select Element"]
-        selectButton.tap()
-        framework.screenshotManager.takeScreenshot(name: "selection_enabled", testCase: "DOMInspectionTests")
+        framework.enableElementSelection(screenshotName: "selection_enabled")
         
         // Switch to Network tab while selection is active
         framework.tapNetworkTab(screenshotName: "switched_to_network")
@@ -252,8 +246,7 @@ class DOMInspectionTests: XCTestCase {
         framework.screenshotManager.takeScreenshot(name: "selection_state_preserved", testCase: "DOMInspectionTests")
         
         // Disable selection
-        selectButton.tap()
-        framework.screenshotManager.takeScreenshot(name: "selection_disabled", testCase: "DOMInspectionTests")
+        framework.disableElementSelection(screenshotName: "selection_disabled")
     }
     
     func testDOMInspectorWithPageReload() throws {

@@ -90,6 +90,15 @@ class BerrryTestFramework {
         screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
     }
     
+    func tapContextTab(screenshotName: String) {
+        let contextTab = app.buttons["Context"]
+        XCTAssertTrue(contextTab.waitForExistence(timeout: 5), "Context tab should exist")
+        
+        contextTab.tap()
+        sleep(UInt32(1))
+        screenshotManager.takeScreenshot(name: screenshotName, testCase: getCurrentTestName())
+    }
+    
     func closeDevTools(screenshotName: String) {
         // Look for close button first, fallback to tapping webview
         let closeButton = app.buttons.matching(identifier: "xmark.circle.fill").firstMatch
@@ -177,8 +186,8 @@ class BerrryTestFramework {
     }
     
     func copyLLMContext(screenshotName: String) {
-        let copyButton = app.buttons["Copy for LLM"]
-        XCTAssertTrue(copyButton.waitForExistence(timeout: 5), "Copy for LLM button should exist")
+        let copyButton = app.buttons["Copy"]
+        XCTAssertTrue(copyButton.waitForExistence(timeout: 5), "Copy button should exist")
         
         copyButton.tap()
         sleep(UInt32(1)) // Wait for copy operation and potential alert
