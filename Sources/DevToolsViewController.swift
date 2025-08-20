@@ -450,16 +450,49 @@ class DevToolsViewController: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stackView)
         
-        // Title
-        let titleLabel = UILabel()
-        titleLabel.text = "Context Export Configuration"
-        titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .bold)
-        titleLabel.textAlignment = .center
-        stackView.addArrangedSubview(titleLabel)
+        // Action Buttons (moved to top)
+        let buttonStack = UIStackView()
+        buttonStack.axis = .horizontal
+        buttonStack.distribution = .fillEqually
+        buttonStack.spacing = 12
+        stackView.addArrangedSubview(buttonStack)
         
-        // Context Type Selection
+        let copyButton = UIButton(type: .system)
+        copyButton.setTitle("📋 Copy", for: .normal)
+        copyButton.backgroundColor = UIColor.systemGreen
+        copyButton.setTitleColor(.white, for: .normal)
+        copyButton.layer.cornerRadius = 8
+        copyButton.addTarget(self, action: #selector(copyConfiguredContext), for: .touchUpInside)
+        buttonStack.addArrangedSubview(copyButton)
+        
+        let shareButton = UIButton(type: .system)
+        shareButton.setTitle("📤 Share", for: .normal)
+        shareButton.backgroundColor = UIColor.systemBlue
+        shareButton.setTitleColor(.white, for: .normal)
+        shareButton.layer.cornerRadius = 8
+        shareButton.addTarget(self, action: #selector(shareContext), for: .touchUpInside)
+        buttonStack.addArrangedSubview(shareButton)
+        
+        // Context Preview (moved to top)
+        let previewLabel = UILabel()
+        previewLabel.text = "Preview:"
+        previewLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        stackView.addArrangedSubview(previewLabel)
+        
+        let textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.isEditable = false
+        textView.font = UIFont.monospacedSystemFont(ofSize: 10, weight: .regular)
+        textView.backgroundColor = UIColor.systemGray6
+        textView.layer.cornerRadius = 8
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        textView.text = generateConfiguredContext()
+        contextTextView = textView
+        stackView.addArrangedSubview(textView)
+        
+        // Context Type Selection (moved down)
         let contextTypeLabel = UILabel()
-        contextTypeLabel.text = "Select Context Types:"
+        contextTypeLabel.text = "Include Data:"
         contextTypeLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         stackView.addArrangedSubview(contextTypeLabel)
         
@@ -481,13 +514,6 @@ class DevToolsViewController: UIViewController {
         contextTypeStack.addArrangedSubview(networkContainer)
         contextTypeStack.addArrangedSubview(consoleContainer)
         
-        // Format info (always plain text)
-        let formatLabel = UILabel()
-        formatLabel.text = "Output Format: Plain Text"
-        formatLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        formatLabel.textColor = UIColor.secondaryLabel
-        stackView.addArrangedSubview(formatLabel)
-        
         // Prompt Template
         let promptLabel = UILabel()
         promptLabel.text = "Prompt Template:"
@@ -503,46 +529,6 @@ class DevToolsViewController: UIViewController {
         promptTextView.translatesAutoresizingMaskIntoConstraints = false
         stackView.addArrangedSubview(promptTextView)
         
-        // Action Buttons
-        let buttonStack = UIStackView()
-        buttonStack.axis = .horizontal
-        buttonStack.distribution = .fillEqually
-        buttonStack.spacing = 12
-        stackView.addArrangedSubview(buttonStack)
-        
-        let previewButton = UIButton(type: .system)
-        previewButton.setTitle("Preview", for: .normal)
-        previewButton.backgroundColor = UIColor.systemBlue
-        previewButton.setTitleColor(.white, for: .normal)
-        previewButton.layer.cornerRadius = 8
-        previewButton.addTarget(self, action: #selector(previewContext), for: .touchUpInside)
-        buttonStack.addArrangedSubview(previewButton)
-        
-        let copyButton = UIButton(type: .system)
-        copyButton.setTitle("Copy", for: .normal)
-        copyButton.backgroundColor = UIColor.systemGreen
-        copyButton.setTitleColor(.white, for: .normal)
-        copyButton.layer.cornerRadius = 8
-        copyButton.addTarget(self, action: #selector(copyConfiguredContext), for: .touchUpInside)
-        buttonStack.addArrangedSubview(copyButton)
-        
-        // Context Preview
-        let previewLabel = UILabel()
-        previewLabel.text = "Context Preview:"
-        previewLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        stackView.addArrangedSubview(previewLabel)
-        
-        let textView = UITextView()
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.isEditable = false
-        textView.font = UIFont.monospacedSystemFont(ofSize: 10, weight: .regular)
-        textView.backgroundColor = UIColor.systemGray6
-        textView.layer.cornerRadius = 8
-        textView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        textView.text = generateCompleteContext()
-        contextTextView = textView
-        stackView.addArrangedSubview(textView)
-        
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
@@ -556,8 +542,8 @@ class DevToolsViewController: UIViewController {
             stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32),
             
             promptTextView.heightAnchor.constraint(equalToConstant: 80),
-            previewButton.heightAnchor.constraint(equalToConstant: 44),
             copyButton.heightAnchor.constraint(equalToConstant: 44),
+            shareButton.heightAnchor.constraint(equalToConstant: 44),
             textView.heightAnchor.constraint(equalToConstant: 200)
         ])
     }
@@ -606,18 +592,25 @@ class DevToolsViewController: UIViewController {
     }
     
     
-    @objc private func previewContext() {
+    @objc private func shareContext() {
         let contextString = generateConfiguredContext()
+        let activityViewController = UIActivityViewController(activityItems: [contextString], applicationActivities: nil)
         
-        let alert = UIAlertController(title: "Context Preview", message: String(contextString.prefix(500)) + (contextString.count > 500 ? "..." : ""), preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        // Handle iPad presentation
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(activityViewController, animated: true)
     }
     
     @objc private func copyConfiguredContext() {
         let contextString = generateConfiguredContext()
         UIPasteboard.general.string = contextString
         
+        // Show visual feedback
         let alert = UIAlertController(title: "Copied!", message: "Context copied to clipboard", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
@@ -813,8 +806,14 @@ class DevToolsViewController: UIViewController {
             elementsTableView.reloadData()
             NSLog("🔍 DevToolsViewController: Reloaded elements table with \(domElements.count) elements")
         case .context:
-            // Context tab - refresh the context content
-            contextTextView?.text = generateCompleteContext()
+            // Context tab - refresh the context content with switch-based configuration
+            updateContextPreview()
+        }
+        
+        // Always update context preview if context tab exists and data has changed
+        // This ensures the preview stays current even when not actively viewing the context tab
+        if contextTextView != nil {
+            updateContextPreview()
         }
     }
     
@@ -863,6 +862,10 @@ class DevToolsViewController: UIViewController {
         if currentTab == .elements {
             updateElementDetailsFromDOMElement(element)
             elementsTableView.reloadData()
+        }
+        // Update context preview when selected element changes
+        if currentTab == .context {
+            updateContextPreview()
         }
     }
 }

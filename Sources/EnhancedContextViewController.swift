@@ -65,26 +65,11 @@ class EnhancedContextViewController: UIViewController {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentView)
         
-        // Title
-        titleLabel.text = "📋 Context for LLM"
-        titleLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(titleLabel)
-        
-        // Subtitle
-        subtitleLabel.text = "Select what to include in your prompt"
-        subtitleLabel.font = UIFont.systemFont(ofSize: 16, weight: .regular)
-        subtitleLabel.textColor = UIColor.secondaryLabel
-        subtitleLabel.textAlignment = .center
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(subtitleLabel)
+        setupActionButtons()
+        setupPreviewSection()
         
         setupContextSelection()
-        setupFormatSelection()
         setupPromptSection()
-        setupPreviewSection()
-        setupActionButtons()
     }
     
     private func setupContextSelection() {
@@ -169,19 +154,6 @@ class EnhancedContextViewController: UIViewController {
         return containerView
     }
     
-    private func setupFormatSelection() {
-        // Section Label
-        formatSelectionLabel.text = "📝 Output Format"
-        formatSelectionLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
-        formatSelectionLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(formatSelectionLabel)
-        
-        // Segmented Control
-        formatSegmentedControl.selectedSegmentIndex = selectedFormat == .json ? 0 : 1
-        formatSegmentedControl.addTarget(self, action: #selector(formatChanged(_:)), for: .valueChanged)
-        formatSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(formatSegmentedControl)
-    }
     
     private func setupPromptSection() {
         // Section Label
@@ -240,13 +212,6 @@ class EnhancedContextViewController: UIViewController {
         actionStackView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(actionStackView)
         
-        // Preview Button
-        previewButton.setTitle("🔄 Refresh", for: .normal)
-        previewButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-        previewButton.setTitleColor(UIColor.systemBlue, for: .normal)
-        previewButton.layer.cornerRadius = 8
-        previewButton.addTarget(self, action: #selector(refreshPreview), for: .touchUpInside)
-        
         // Copy Button
         copyButton.setTitle("📋 Copy", for: .normal)
         copyButton.backgroundColor = UIColor.systemGreen
@@ -254,16 +219,16 @@ class EnhancedContextViewController: UIViewController {
         copyButton.layer.cornerRadius = 8
         copyButton.addTarget(self, action: #selector(copyContent), for: .touchUpInside)
         
-        // Close Button
-        closeButton.setTitle("✕ Close", for: .normal)
-        closeButton.backgroundColor = UIColor.systemGray
-        closeButton.setTitleColor(.white, for: .normal)
-        closeButton.layer.cornerRadius = 8
-        closeButton.addTarget(self, action: #selector(closeViewController), for: .touchUpInside)
+        // Share Button (new)
+        let shareButton = UIButton(type: .system)
+        shareButton.setTitle("📤 Share", for: .normal)
+        shareButton.backgroundColor = UIColor.systemBlue
+        shareButton.setTitleColor(.white, for: .normal)
+        shareButton.layer.cornerRadius = 8
+        shareButton.addTarget(self, action: #selector(shareContent), for: .touchUpInside)
         
-        actionStackView.addArrangedSubview(previewButton)
         actionStackView.addArrangedSubview(copyButton)
-        actionStackView.addArrangedSubview(closeButton)
+        actionStackView.addArrangedSubview(shareButton)
     }
     
     private func setupConstraints() {
@@ -281,51 +246,14 @@ class EnhancedContextViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
-            // Title
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            // Action Buttons (moved to top)
+            actionStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            actionStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            actionStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            actionStackView.heightAnchor.constraint(equalToConstant: 50),
             
-            // Subtitle
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            // Context Selection
-            contextSelectionLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 24),
-            contextSelectionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            contextSelectionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            contextStackView.topAnchor.constraint(equalTo: contextSelectionLabel.bottomAnchor, constant: 12),
-            contextStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            contextStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            // Format Selection
-            formatSelectionLabel.topAnchor.constraint(equalTo: contextStackView.bottomAnchor, constant: 24),
-            formatSelectionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            formatSelectionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            formatSegmentedControl.topAnchor.constraint(equalTo: formatSelectionLabel.bottomAnchor, constant: 12),
-            formatSegmentedControl.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            formatSegmentedControl.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            formatSegmentedControl.heightAnchor.constraint(equalToConstant: 32),
-            
-            // Prompt Section
-            promptLabel.topAnchor.constraint(equalTo: formatSegmentedControl.bottomAnchor, constant: 24),
-            promptLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            promptLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            promptTextView.topAnchor.constraint(equalTo: promptLabel.bottomAnchor, constant: 12),
-            promptTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            promptTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            promptTextView.heightAnchor.constraint(equalToConstant: 80),
-            
-            promptCharacterLabel.topAnchor.constraint(equalTo: promptTextView.bottomAnchor, constant: 4),
-            promptCharacterLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            promptCharacterLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            // Preview Section
-            previewLabel.topAnchor.constraint(equalTo: promptCharacterLabel.bottomAnchor, constant: 24),
+            // Preview Section (moved up)
+            previewLabel.topAnchor.constraint(equalTo: actionStackView.bottomAnchor, constant: 24),
             previewLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             previewLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
@@ -338,12 +266,29 @@ class EnhancedContextViewController: UIViewController {
             previewCharacterLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             previewCharacterLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            // Action Buttons
-            actionStackView.topAnchor.constraint(equalTo: previewCharacterLabel.bottomAnchor, constant: 24),
-            actionStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            actionStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            actionStackView.heightAnchor.constraint(equalToConstant: 50),
-            actionStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+            // Context Selection
+            contextSelectionLabel.topAnchor.constraint(equalTo: previewCharacterLabel.bottomAnchor, constant: 24),
+            contextSelectionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            contextSelectionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            
+            contextStackView.topAnchor.constraint(equalTo: contextSelectionLabel.bottomAnchor, constant: 12),
+            contextStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            contextStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            
+            // Prompt Section
+            promptLabel.topAnchor.constraint(equalTo: contextStackView.bottomAnchor, constant: 24),
+            promptLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            promptLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            
+            promptTextView.topAnchor.constraint(equalTo: promptLabel.bottomAnchor, constant: 12),
+            promptTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            promptTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            promptTextView.heightAnchor.constraint(equalToConstant: 80),
+            
+            promptCharacterLabel.topAnchor.constraint(equalTo: promptTextView.bottomAnchor, constant: 4),
+            promptCharacterLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            promptCharacterLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            promptCharacterLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
         
         // Switch containers are sized by their intrinsic content size
@@ -366,15 +311,6 @@ class EnhancedContextViewController: UIViewController {
         updatePreview()
     }
     
-    @objc private func formatChanged(_ sender: UISegmentedControl) {
-        selectedFormat = sender.selectedSegmentIndex == 0 ? .json : .plainText
-        updatePreview()
-    }
-    
-    @objc private func refreshPreview() {
-        updatePreview()
-    }
-    
     @objc private func copyContent() {
         let finalContent = promptTextView.text.replacingOccurrences(of: "{context}", with: previewContent)
         UIPasteboard.general.string = finalContent
@@ -389,8 +325,18 @@ class EnhancedContextViewController: UIViewController {
         saveSettings()
     }
     
-    @objc private func closeViewController() {
-        dismiss(animated: true)
+    @objc private func shareContent() {
+        let finalContent = promptTextView.text.replacingOccurrences(of: "{context}", with: previewContent)
+        let activityViewController = UIActivityViewController(activityItems: [finalContent], applicationActivities: nil)
+        
+        // Handle iPad presentation
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(activityViewController, animated: true)
     }
     
     // MARK: - Helper Methods
