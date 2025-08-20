@@ -521,7 +521,19 @@ class DevToolsViewController: UIViewController {
         stackView.addArrangedSubview(promptLabel)
         
         let promptTextView = UITextView()
-        promptTextView.text = "Debug this: {context}"
+        promptTextView.text = """
+Please analyze this debugging context:
+
+{context}
+
+Focus on:
+1. Console errors or warnings that indicate problems
+2. Failed network requests and potential causes  
+3. Performance issues based on request patterns
+4. Actionable recommendations for debugging or fixing identified issues
+
+Provide specific, actionable insights to help debug web application issues.
+"""
         promptTextView.font = UIFont.systemFont(ofSize: 14)
         promptTextView.backgroundColor = UIColor.systemGray6
         promptTextView.layer.cornerRadius = 8
@@ -541,7 +553,7 @@ class DevToolsViewController: UIViewController {
             stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -16),
             stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32),
             
-            promptTextView.heightAnchor.constraint(equalToConstant: 80),
+            promptTextView.heightAnchor.constraint(equalToConstant: 120),
             copyButton.heightAnchor.constraint(equalToConstant: 44),
             shareButton.heightAnchor.constraint(equalToConstant: 44),
             textView.heightAnchor.constraint(equalToConstant: 200)
@@ -684,20 +696,7 @@ class DevToolsViewController: UIViewController {
             """)
         }
         
-        // Add analysis prompt if any sections are included
-        if contextSections.count > 1 {
-            contextSections.append("""
-            
-            ## Instructions for LLM Analysis:
-            Please analyze the above context for:
-            1. Any console errors or warnings that indicate problems
-            2. Failed network requests and potential causes
-            3. Performance issues based on request patterns
-            4. Recommendations for debugging or fixing identified issues
-            
-            Focus on actionable insights that would help debug web application issues.
-            """)
-        }
+        // Instructions are now part of the prompt template, not the context data
         
         return contextSections.joined(separator: "\n")
     }
@@ -935,24 +934,6 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     }
 }
 
-// MARK: - ContextCopyControllerDelegate
-extension DevToolsViewController: ContextCopyControllerDelegate {
-    func contextCopyController(_ controller: ContextCopyController, didRequestDOMExtraction completion: @escaping (String?) -> Void) {
-        delegate?.devToolsDidRequestDOMExtraction(for: selectedElementId.isEmpty ? "" : selectedElementId, completion: completion)
-    }
-    
-    func contextCopyController(_ controller: ContextCopyController, didRequestCSSExtraction completion: @escaping (String?) -> Void) {
-        delegate?.devToolsDidRequestCSSExtraction(for: selectedElementId.isEmpty ? "body" : selectedElementId, completion: completion)
-    }
-    
-    func contextCopyControllerDidRequestConsoleLogs(_ controller: ContextCopyController) -> [String] {
-        return consoleLogs
-    }
-    
-    func contextCopyControllerDidRequestNetworkLogs(_ controller: ContextCopyController) -> [NetworkRequestModel] {
-        return networkRequests
-    }
-}
 
 // MARK: - UISearchBarDelegate
 extension DevToolsViewController: UISearchBarDelegate {
