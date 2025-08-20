@@ -224,6 +224,7 @@ class DevToolsViewController: UIViewController {
             return // Special handling for network tab
         case .context:
             setupContextTabLayout()
+            updateContextPreview() // Ensure preview is current when switching to tab
             return // Special handling for context tab
         }
         
