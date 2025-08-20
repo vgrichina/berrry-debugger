@@ -1,8 +1,73 @@
 // BerrryDebugger Lazy DOM Traversal Functions
 // This script provides efficient DOM inspection with lazy loading capabilities
 
+console.log('🚀 LazyDOM script starting execution');
+
+// Utility function to safely post messages
+function postLazyDOMMessage(data) {
+    try {
+        console.log('📤 Posting LazyDOM message:', data.type);
+        webkit.messageHandlers.lazyDOMInspector.postMessage(data);
+    } catch (e) {
+        console.error('❌ Failed to post LazyDOM message:', e);
+    }
+}
+
+// Test message - verifies message handler is available
+try {
+    webkit.messageHandlers.lazyDOMInspector.postMessage({
+        type: 'test',
+        message: 'LazyDOM script loaded'
+    });
+    console.log('✅ Test message sent - message handler available');
+} catch (e) {
+    console.error('❌ Failed to send test message - message handler unavailable:', e);
+}
+
 window.LazyDOM = {
-    // Generate CSS selector for element
+    // WeakMap for unique element IDs
+    elementIds: new WeakMap(),
+    idCounter: 0,
+    
+    // Get unique ID for element
+    getElementId: function(element) {
+        if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
+        
+        if (!this.elementIds.has(element)) {
+            this.idCounter++;
+            this.elementIds.set(element, 'elem_' + this.idCounter);
+        }
+        return this.elementIds.get(element);
+    },
+    
+    // Find element by unique ID
+    findElementById: function(uniqueId) {
+        console.log('🔍 findElementById: Looking for uniqueId:', uniqueId);
+        
+        // Since WeakMap doesn't support reverse lookup, we'll search the DOM
+        // This is less efficient but only used for expansion operations
+        const elements = document.querySelectorAll('*');
+        let foundCount = 0;
+        let elementIds = [];
+        
+        for (let element of elements) {
+            if (this.elementIds.has(element)) {
+                foundCount++;
+                const elemId = this.elementIds.get(element);
+                elementIds.push(elemId);
+                if (elemId === uniqueId) {
+                    console.log('✅ findElementById: Found element:', element.tagName, 'with ID:', uniqueId);
+                    return element;
+                }
+            }
+        }
+        
+        console.log('❌ findElementById: Element not found. Total elements in WeakMap:', foundCount);
+        console.log('❌ findElementById: Available element IDs:', elementIds.join(', '));
+        return null;
+    },
+    
+    // Generate CSS selector for element (kept for debugging/display purposes)
     generateSelector: function(element) {
         if (!element || element.nodeType !== Node.ELEMENT_NODE) return '';
         if (element.id) return '#' + element.id;
@@ -13,7 +78,7 @@ window.LazyDOM = {
         while (current && current.nodeType === Node.ELEMENT_NODE && current !== document.body) {
             let selector = current.tagName.toLowerCase();
             
-            if (current.className) {
+            if (current.className && typeof current.className === 'string' && current.className.trim) {
                 const classes = current.className.trim().split(/\s+/).slice(0, 2);
                 if (classes.length > 0 && classes[0]) {
                     selector += '.' + classes.join('.');
@@ -55,7 +120,8 @@ window.LazyDOM = {
             className: element.className || null,
             attributes: attributes,
             textContent: element.textContent?.trim().substring(0, 200) || null,
-            selector: this.generateSelector(element),
+            elementId: this.getElementId(element), // Unique ID for this element
+            displaySelector: this.generateSelector(element), // CSS selector for display
             hasChildren: element.children.length > 0,
             childCount: element.children.length,
             depth: depth,
@@ -80,62 +146,113 @@ window.LazyDOM = {
         };
     },
     
-    // Get root elements (body children) - initial load
+    // Get root element (the actual <html> element) - initial load
     getRootElements: function() {
-        const body = document.body;
-        if (!body) return [];
+        console.log('🔍 getRootElements: Starting with document.documentElement');
+        const htmlElement = document.documentElement; // This is the <html> element
+        console.log('🔍 getRootElements: htmlElement:', htmlElement ? htmlElement.tagName : 'null');
         
-        const rootElements = [];
-        for (let i = 0; i < body.children.length && i < 30; i++) {
-            const child = body.children[i];
-            if (child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
-                const elementInfo = this.getElementInfo(child, 1);
-                if (elementInfo) {
-                    rootElements.push(elementInfo);
-                }
-            }
+        if (!htmlElement) {
+            console.log('❌ getRootElements: No HTML element found');
+            return [];
         }
         
-        return rootElements;
+        // Return the actual HTML root element
+        console.log('🔍 getRootElements: About to call getElementInfo for HTML element');
+        const elementInfo = this.getElementInfo(htmlElement, 0);
+        console.log('🔍 getRootElements: getElementInfo returned:', elementInfo ? 'object' : 'null');
+        
+        if (elementInfo) {
+            console.log('🔍 getRootElements: Returning array with 1 HTML element');
+            return [elementInfo];
+        }
+        
+        console.log('❌ getRootElements: getElementInfo returned null, returning empty array');
+        return [];
     },
     
-    // Get children for specific selector (lazy load children)
-    getChildren: function(selector) {
+    // Get children for specific element ID (lazy load children)
+    getChildren: function(uniqueId, parentDepth = null) {
         try {
-            const element = document.querySelector(selector);
-            if (!element) return [];
+            console.log('🔍 LazyDOM.getChildren called for unique ID:', uniqueId, 'parentDepth:', parentDepth);
+            const element = this.findElementById(uniqueId);
+            if (!element) {
+                console.log('❌ LazyDOM.getChildren: Element not found for ID:', uniqueId);
+                // Send empty children via message
+                postLazyDOMMessage({
+                    type: 'childElements',
+                    elementId: uniqueId,
+                    children: []
+                });
+                return;
+            }
             
             const children = [];
-            const currentDepth = (selector.split('>').length) + 1;
+            // Calculate child depth: if parentDepth is provided, use it + 1
+            // Otherwise, determine depth based on element position
+            let childDepth;
+            if (parentDepth !== null) {
+                childDepth = parentDepth + 1;
+                console.log('🔍 Using provided parentDepth:', parentDepth, 'childDepth will be:', childDepth);
+            } else {
+                // Fallback: calculate depth from document structure
+                if (element === document.documentElement) {
+                    childDepth = 1; // HTML's children (HEAD, BODY) are depth 1
+                } else {
+                    // For other elements, try to calculate depth
+                    let tempDepth = 0;
+                    let tempElement = element;
+                    while (tempElement && tempElement !== document.documentElement) {
+                        tempDepth++;
+                        tempElement = tempElement.parentElement;
+                    }
+                    childDepth = tempDepth + 1;
+                }
+                console.log('🔍 Calculated childDepth:', childDepth, 'for element:', element.tagName);
+            }
             
             for (let i = 0; i < element.children.length && i < 50; i++) {
                 const child = element.children[i];
                 if (child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
-                    const childInfo = this.getElementInfo(child, currentDepth);
+                    const childInfo = this.getElementInfo(child, childDepth);
                     if (childInfo) {
                         children.push(childInfo);
                     }
                 }
             }
             
-            return children;
+            console.log('✅ LazyDOM.getChildren: Found', children.length, 'children for', uniqueId);
+            
+            // Send children via message instead of returning
+            postLazyDOMMessage({
+                type: 'childElements',
+                elementId: uniqueId,
+                children: children
+            });
+            
         } catch (error) {
-            console.error('LazyDOM.getChildren error:', error);
-            return [];
+            console.error('❌ LazyDOM.getChildren error:', error);
+            // Send error via message
+            postLazyDOMMessage({
+                type: 'childElements',
+                elementId: uniqueId,
+                children: [],
+                error: error.message
+            });
         }
     },
     
     // Get detailed element info for selected element
-    getElementDetails: function(selector) {
+    getElementDetails: function(uniqueId) {
         try {
-            const element = document.querySelector(selector);
+            const element = this.findElementById(uniqueId);
             if (!element) return null;
             
             const elementInfo = this.getElementInfo(element);
             if (elementInfo) {
                 // Add additional details for selected elements
                 elementInfo.innerHTML = element.innerHTML?.substring(0, 500) || null;
-                elementInfo.offsetParent = element.offsetParent ? this.generateSelector(element.offsetParent) : null;
+                elementInfo.offsetParent = element.offsetParent ? this.getElementId(element.offsetParent) : null;
                 elementInfo.scrollTop = element.scrollTop;
                 elementInfo.scrollLeft = element.scrollLeft;
             }
@@ -255,3 +372,50 @@ window.LazyDOM = {
 
 // Initialize and log readiness
 console.log('🌳 LazyDOM functions initialized and ready');
+
+// Auto-initialize DOM when ready
+function initializeLazyDOM() {
+    console.log('🚀 initializeLazyDOM() called - readyState:', document.readyState);
+    
+    if (document.readyState === 'loading') {
+        console.log('📋 Document still loading, adding DOMContentLoaded listener');
+        document.addEventListener('DOMContentLoaded', initializeLazyDOM);
+        return;
+    }
+    
+    try {
+        console.log('🔍 Document ready, about to call getRootElements()');
+        console.log('🔍 Document body exists:', !!document.body);
+        console.log('🔍 Document body children count:', document.body ? document.body.children.length : 'no body');
+        
+        const rootElements = window.LazyDOM.getRootElements();
+        console.log('📊 getRootElements() returned:', typeof rootElements, 'length:', rootElements ? rootElements.length : 'null');
+        
+        if (rootElements && rootElements.length > 0) {
+            console.log('📊 First element example:', rootElements[0]);
+        }
+        
+        if (!rootElements) {
+            console.error('❌ getRootElements() returned null/undefined');
+            return;
+        }
+        
+        if (rootElements.length === 0) {
+            console.error('❌ getRootElements() returned empty array');
+            return;
+        }
+        
+        postLazyDOMMessage({
+            type: 'rootElements',
+            elements: rootElements
+        });
+        console.log('✅ LazyDOM initialized and sent', rootElements.length, 'root elements');
+    } catch (error) {
+        console.error('❌ Error in initializeLazyDOM:', error);
+        console.error('❌ Error stack:', error.stack);
+    }
+}
+
+// Don't auto-initialize - wait for explicit request from Swift
+// initializeLazyDOM();
+console.log('🔍 LazyDOM script loaded - waiting for explicit initialization request');

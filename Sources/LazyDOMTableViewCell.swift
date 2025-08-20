@@ -1,4 +1,5 @@
 import UIKit
+import os.log
 
 class LazyDOMTableViewCell: UITableViewCell {
     
@@ -30,16 +31,21 @@ class LazyDOMTableViewCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = UIColor.systemBackground
         
+        // Enable user interaction in contentView for button taps
+        contentView.isUserInteractionEnabled = true
+        
         // Indent view for depth visualization
         indentView.backgroundColor = UIColor.clear
         indentView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(indentView)
         
-        // Expand button
+        // Expand button - simple approach, no gesture recognizers
         expandButton.titleLabel?.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .medium)
         expandButton.setTitleColor(UIColor.systemBlue, for: .normal)
         expandButton.addTarget(self, action: #selector(expandButtonTapped), for: .touchUpInside)
         expandButton.translatesAutoresizingMaskIntoConstraints = false
+        expandButton.isUserInteractionEnabled = true
+        
         contentView.addSubview(expandButton)
         
         // Tag label
@@ -80,11 +86,11 @@ class LazyDOMTableViewCell: UITableViewCell {
             indentView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             indentView.widthAnchor.constraint(equalToConstant: 0), // Will be updated dynamically
             
-            // Expand button
+            // Expand button - make it much larger for easier tapping
             expandButton.leadingAnchor.constraint(equalTo: indentView.trailingAnchor, constant: 4),
             expandButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            expandButton.widthAnchor.constraint(equalToConstant: 20),
-            expandButton.heightAnchor.constraint(equalToConstant: 20),
+            expandButton.widthAnchor.constraint(equalToConstant: 40),
+            expandButton.heightAnchor.constraint(equalToConstant: 40),
             
             // Loading indicator (same position as expand button)
             loadingIndicator.centerXAnchor.constraint(equalTo: expandButton.centerXAnchor),
@@ -112,8 +118,16 @@ class LazyDOMTableViewCell: UITableViewCell {
     func configure(with element: LazyDOMElement, onExpand: @escaping () -> Void) {
         self.onExpand = onExpand
         
-        // Update indent based on depth
-        let indentWidth = CGFloat(element.depth * 16)
+        // Debug: Log element depth to catch overflow issues
+        NSLog("🔍 LazyDOMTableViewCell: configuring element %@ with depth %d", element.tagName, element.depth)
+        
+        // Update indent based on depth (with overflow protection)
+        let safeDepth = max(0, min(element.depth, 20)) // Limit depth to prevent overflow
+        let indentWidth = CGFloat(safeDepth * 16)
+        
+        if element.depth != safeDepth {
+            NSLog("⚠️ LazyDOMTableViewCell: Clamped depth from %d to %d to prevent overflow", element.depth, safeDepth)
+        }
         // Remove existing width constraints first
         indentView.constraints.forEach { constraint in
             if constraint.firstAttribute == .width {
@@ -128,6 +142,15 @@ class LazyDOMTableViewCell: UITableViewCell {
         if element.hasChildren {
             expandButton.isHidden = false
             loadingIndicator.isHidden = true
+            
+            // Normal expand button styling
+            expandButton.backgroundColor = UIColor.clear
+            expandButton.layer.cornerRadius = 0
+            expandButton.layer.borderWidth = 0
+            expandButton.layer.borderColor = UIColor.clear.cgColor
+            expandButton.isUserInteractionEnabled = true
+            expandButton.setTitleColor(UIColor.systemBlue, for: .normal)
+            expandButton.titleLabel?.font = UIFont.monospacedSystemFont(ofSize: 12, weight: .medium)
             
             switch element.loadingState {
             case .loading:
@@ -208,16 +231,34 @@ class LazyDOMTableViewCell: UITableViewCell {
     }
     
     @objc private func expandButtonTapped() {
-        onExpand?()
+        NSLog("✅ LazyDOMTableViewCell: expandButtonTapped method called!")
+        NSLog("✅ LazyDOMTableViewCell: onExpand callback exists: %@", onExpand != nil ? "YES" : "NO")
+        
+        // Visual feedback - make button green to show tap was detected
+        expandButton.backgroundColor = UIColor.systemGreen
+        
+        // Call the expand callback immediately
+        if let onExpand = onExpand {
+            NSLog("✅ LazyDOMTableViewCell: Calling onExpand callback now...")
+            onExpand()
+            NSLog("✅ LazyDOMTableViewCell: onExpand callback completed")
+        } else {
+            NSLog("❌ LazyDOMTableViewCell: onExpand callback is nil!")
+        }
     }
+    
     
     override func prepareForReuse() {
         super.prepareForReuse()
         
-        // Reset state
+        // CRITICAL: Clear the callback to prevent mismatched actions
+        onExpand = nil
+        
+        // Reset visual state
         expandButton.isHidden = false
         expandButton.setTitle("▶", for: .normal)
         expandButton.setTitleColor(UIColor.systemBlue, for: .normal)
+        expandButton.backgroundColor = UIColor.clear
         loadingIndicator.stopAnimating()
         loadingIndicator.isHidden = true
         tagLabel.text = ""
@@ -226,7 +267,7 @@ class LazyDOMTableViewCell: UITableViewCell {
         childCountLabel.text = ""
         childCountLabel.isHidden = true
         backgroundColor = UIColor.systemBackground
-        onExpand = nil
+        contentView.backgroundColor = UIColor.systemBackground
         
         // Reset indent constraint
         indentView.constraints.forEach { constraint in
@@ -236,3 +277,4 @@ class LazyDOMTableViewCell: UITableViewCell {
         }
     }
 }
+
