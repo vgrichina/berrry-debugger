@@ -523,17 +523,13 @@ class DevToolsViewController: UIViewController {
         
         let promptTextView = UITextView()
         promptTextView.text = """
-Please analyze this debugging context:
+<task>
+Analyze the debugging context for the web page at {URL} and provide specific, actionable insights to help debug issues on this page.
+</task>
 
+<context>
 {context}
-
-Focus on:
-1. Console errors or warnings that indicate problems
-2. Failed network requests and potential causes  
-3. Performance issues based on request patterns
-4. Actionable recommendations for debugging or fixing identified issues
-
-Provide specific, actionable insights to help debug web application issues.
+</context>
 """
         promptTextView.font = UIFont.systemFont(ofSize: 14)
         promptTextView.backgroundColor = UIColor.systemGray6
@@ -641,17 +637,19 @@ Provide specific, actionable insights to help debug web application issues.
         
         // Add header
         contextSections.append("""
-        # Debug Context Export
-        Generated: \(timestamp)
-        Current URL: \(currentURL)
+        <page_info>
+        <url>\(currentURL)</url>
+        <generated_at>\(timestamp)</generated_at>
+        </page_info>
         """)
         
         // Add sections based on switch states
         if fullDOMSwitch?.isOn == true {
             contextSections.append("""
             
-            ## Full DOM Structure
+            <dom_structure>
             [Full DOM would be extracted here - requires JavaScript evaluation]
+            </dom_structure>
             """)
         }
         
@@ -659,17 +657,19 @@ Provide specific, actionable insights to help debug web application issues.
             let elementInfo = selectedDOMElement?.tagName ?? "No element selected"
             contextSections.append("""
             
-            ## Selected Element
-            Element: \(elementInfo)
-            Selector: \(selectedDOMElement?.displaySelector ?? "None")
+            <selected_element>
+            <tag>\(elementInfo)</tag>
+            <selector>\(selectedDOMElement?.displaySelector ?? "None")</selector>
+            </selected_element>
             """)
         }
         
         if cssSwitch?.isOn == true {
             contextSections.append("""
             
-            ## CSS Styles
+            <css_styles>
             [CSS styles would be extracted here - requires JavaScript evaluation]
+            </css_styles>
             """)
         }
         
@@ -679,12 +679,14 @@ Provide specific, actionable insights to help debug web application issues.
             
             contextSections.append("""
             
-            ## Network Requests (\(networkRequests.count) total)
-            ### Failed Requests (\(failedRequests.count)):
+            <network_requests total="\(networkRequests.count)">
+            <failed_requests count="\(failedRequests.count)">
             \(failedRequests.prefix(5).map { "❌ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
-            
-            ### Recent Requests:
+            </failed_requests>
+            <recent_requests>
             \(recentRequests.map { "✅ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
+            </recent_requests>
+            </network_requests>
             """)
         }
         
@@ -692,8 +694,9 @@ Provide specific, actionable insights to help debug web application issues.
             let recentConsoleLogs = consoleLogs.suffix(15).joined(separator: "\n")
             contextSections.append("""
             
-            ## Console Logs (Last 15 entries)
+            <console_logs>
             \(recentConsoleLogs.isEmpty ? "No console logs available" : recentConsoleLogs)
+            </console_logs>
             """)
         }
         
@@ -702,51 +705,6 @@ Provide specific, actionable insights to help debug web application issues.
         return contextSections.joined(separator: "\n")
     }
     
-    private func generateCompleteContext() -> String {
-        let currentURL = currentWebView?.url?.absoluteString ?? "Unknown URL"
-        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
-        
-        // Get recent console logs
-        let recentConsoleLogs = consoleLogs.suffix(15).joined(separator: "\n")
-        
-        // Get failed and recent network requests
-        let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
-        let recentRequests = networkRequests.suffix(10)
-        
-        // Generate comprehensive context
-        let context = """
-        # Complete Debug Context Export
-        Generated: \(timestamp)
-        Current URL: \(currentURL)
-        
-        ## Page Information
-        - Active URL: \(currentURL)
-        - Total Network Requests: \(networkRequests.count)
-        - Failed Network Requests: \(failedRequests.count)
-        - Console Log Entries: \(consoleLogs.count)
-        
-        ## Console Logs (Last 15 entries)
-        \(recentConsoleLogs.isEmpty ? "No console logs available" : recentConsoleLogs)
-        
-        ## Network Request Summary
-        ### Failed Requests (\(failedRequests.count) total):
-        \(failedRequests.prefix(8).map { "❌ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
-        
-        ### Recent Successful Requests:
-        \(recentRequests.filter { $0.status >= 200 && $0.status < 400 }.map { "✅ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
-        
-        ## Instructions for LLM Analysis:
-        This is a complete debugging context from BerrryDebugger iOS app. Please analyze:
-        1. Any console errors or warnings that indicate problems
-        2. Failed network requests and potential causes
-        3. Performance issues based on request patterns
-        4. Recommendations for debugging or fixing identified issues
-        
-        Focus on actionable insights that would help debug web application issues.
-        """
-        
-        return context
-    }
     
     private func showCopySuccessAlert(message: String) {
         let alert = UIAlertController(title: "Copied!", message: message, preferredStyle: .alert)
