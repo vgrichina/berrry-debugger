@@ -13,8 +13,9 @@ class LazyDOMTableViewCell: UITableViewCell {
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
     private let childCountLabel = UILabel()
     
-    // Expand callback
+    // Callbacks
     private var onExpand: (() -> Void)?
+    private var onSelect: (() -> Void)?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -33,6 +34,10 @@ class LazyDOMTableViewCell: UITableViewCell {
         
         // Enable user interaction in contentView for button taps
         contentView.isUserInteractionEnabled = true
+        
+        // Add tap gesture for element selection
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(cellTapped))
+        contentView.addGestureRecognizer(tapGesture)
         
         // Indent view for depth visualization
         indentView.backgroundColor = UIColor.clear
@@ -115,8 +120,9 @@ class LazyDOMTableViewCell: UITableViewCell {
         ])
     }
     
-    func configure(with element: LazyDOMElement, onExpand: @escaping () -> Void) {
+    func configure(with element: LazyDOMElement, onExpand: @escaping () -> Void, onSelect: @escaping () -> Void) {
         self.onExpand = onExpand
+        self.onSelect = onSelect
         
         // Debug: Log element depth to catch overflow issues
         NSLog("🔍 LazyDOMTableViewCell: configuring element %@ with depth %d", element.tagName, element.depth)
@@ -247,12 +253,27 @@ class LazyDOMTableViewCell: UITableViewCell {
         }
     }
     
+    @objc private func cellTapped() {
+        NSLog("✅ LazyDOMTableViewCell: cellTapped method called!")
+        NSLog("✅ LazyDOMTableViewCell: onSelect callback exists: %@", onSelect != nil ? "YES" : "NO")
+        
+        // Call the select callback
+        if let onSelect = onSelect {
+            NSLog("✅ LazyDOMTableViewCell: Calling onSelect callback now...")
+            onSelect()
+            NSLog("✅ LazyDOMTableViewCell: onSelect callback completed")
+        } else {
+            NSLog("❌ LazyDOMTableViewCell: onSelect callback is nil!")
+        }
+    }
+    
     
     override func prepareForReuse() {
         super.prepareForReuse()
         
-        // CRITICAL: Clear the callback to prevent mismatched actions
+        // CRITICAL: Clear the callbacks to prevent mismatched actions
         onExpand = nil
+        onSelect = nil
         
         // Reset visual state
         expandButton.isHidden = false

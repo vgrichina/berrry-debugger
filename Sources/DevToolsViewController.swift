@@ -1,9 +1,10 @@
 import UIKit
 import WebKit
+import os.log
 
 protocol DevToolsViewControllerDelegate: AnyObject {
-    func devToolsDidRequestDOMExtraction(for selector: String, completion: @escaping (String?) -> Void)
-    func devToolsDidRequestCSSExtraction(for selector: String, completion: @escaping (String?) -> Void)
+    func devToolsDidRequestDOMExtraction(for elementId: String, completion: @escaping (String?) -> Void)
+    func devToolsDidRequestCSSExtraction(for elementId: String, completion: @escaping (String?) -> Void)
 }
 
 class DevToolsViewController: UIViewController {
@@ -32,15 +33,14 @@ class DevToolsViewController: UIViewController {
     private var filteredNetworkRequests: [NetworkRequestModel] = []
     private var expandedNetworkRequests: Set<UUID> = []
     private var currentWebView: WKWebView?
-    private var selectedElementSelector: String = ""
+    private var selectedElementId: String = ""
     private var contextTextView: UITextView?
-    private var filteredDOMElements: [DOMElement] = []
-    private var selectedDOMElement: DOMElement?
+    private var filteredDOMElements: [LazyDOMElement] = []
+    private var selectedDOMElement: LazyDOMElement?
     private var searchText: String = ""
     private var networkSearchText: String = ""
     
     // DOM Inspector
-    private let domInspector = DOMInspector()
     private var isElementSelectionMode = false
     weak var browserViewController: BrowserViewController?
     
@@ -76,6 +76,10 @@ class DevToolsViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupSegmentedControl()
+        
+        // Add a test console message to verify console functionality
+        consoleLogs.append("🔍 DevTools initialized - console logging is working")
+        
         showTab(.elements)
     }
     
@@ -127,9 +131,10 @@ class DevToolsViewController: UIViewController {
         // Elements Table View
         elementsTableView.delegate = self
         elementsTableView.dataSource = self
-        elementsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "DOMElementCell")
+        elementsTableView.register(LazyDOMTableViewCell.self, forCellReuseIdentifier: LazyDOMTableViewCell.identifier)
         elementsTableView.separatorStyle = .none
         elementsTableView.backgroundColor = UIColor.systemBackground
+        elementsTableView.allowsSelection = false  // Disable selection to prevent interference with buttons
         elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         
         // Console Table View
@@ -245,7 +250,7 @@ class DevToolsViewController: UIViewController {
         // Setup elements table view
         elementsTableView.delegate = self
         elementsTableView.dataSource = self
-        elementsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "DOMCell")
+        elementsTableView.register(LazyDOMTableViewCell.self, forCellReuseIdentifier: LazyDOMTableViewCell.identifier)
         elementsTableView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.addSubview(elementsTableView)
         
@@ -274,9 +279,15 @@ class DevToolsViewController: UIViewController {
         elementDetailsLabel.translatesAutoresizingMaskIntoConstraints = false
         detailsVisualEffectView.contentView.addSubview(elementDetailsLabel)
         
-        // Trigger DOM content loading when Elements tab is shown
-        browserViewController?.refreshDOMTree()
-        loadDOMContent()
+        // Trigger lazy loading of DOM elements when Elements tab is first opened
+        if filteredDOMElements.isEmpty {
+            NSLog("🔍 DevToolsViewController: Elements tab opened - triggering lazy DOM load")
+            browserViewController?.domInspector?.loadInitialDOM()
+        }
+        
+        // Reload the table with existing data
+        elementsTableView.reloadData()
+        NSLog("🔍 DevToolsViewController: Elements tab shown, reloaded table with \(filteredDOMElements.count) elements")
         
         NSLayoutConstraint.activate([
             // Element select button
@@ -311,27 +322,32 @@ class DevToolsViewController: UIViewController {
         ])
     }
     
-    private func loadDOMContent() {
-        // Load DOM tree from DOMInspector if available, otherwise show empty
-        if domInspector.getCurrentDOMTree() != nil {
-            let allElements = domInspector.searchElements(query: searchText)
-            // Initially show only elements up to depth 3 to keep it manageable
-            filteredDOMElements = allElements.filter { $0.depth <= 3 }
-        } else {
-            filteredDOMElements = []
-        }
-        elementsTableView.reloadData()
-    }
+    // loadDOMContent() removed - DOM content now provided by BrowserViewController
     
     private func updateDOMDisplay() {
-        let allElements = domInspector.searchElements(query: searchText)
-        // Show limited depth unless searching
-        if searchText.isEmpty {
-            filteredDOMElements = allElements.filter { $0.depth <= 3 }
-        } else {
-            filteredDOMElements = allElements // Show all when searching
-        }
+        NSLog("🔍 DevToolsViewController: updateDOMDisplay called - Elements are now provided by BrowserViewController")
+        // DOM elements are now provided by BrowserViewController, just reload the table
         elementsTableView.reloadData()
+        NSLog("🔍 DevToolsViewController: Reloaded table with \(filteredDOMElements.count) elements")
+    }
+    
+    private func toggleElementExpansion(element: LazyDOMElement) {
+        NSLog("🔍 toggleElementExpansion called for element: %@ (elementId: %@)", element.tagName, element.elementId)
+        NSLog("🔍 Element isExpanded: %@, hasChildren: %@", element.isExpanded ? "YES" : "NO", element.hasChildren ? "YES" : "NO")
+        NSLog("🔍 browserViewController exists: %@", browserViewController != nil ? "YES" : "NO")
+        NSLog("🔍 domInspector exists: %@", browserViewController?.domInspector != nil ? "YES" : "NO")
+        
+        // Element expansion is now handled by BrowserViewController's LazyDOMInspector
+        if element.isExpanded {
+            NSLog("🔍 Calling collapseElement")
+            browserViewController?.domInspector?.collapseElement(elementId: element.elementId)
+        } else {
+            NSLog("🔍 Calling expandElement")
+            browserViewController?.domInspector?.expandElement(elementId: element.elementId)
+        }
+        
+        // Update display immediately
+        updateDOMDisplay()
     }
     
     // MARK: - Actions
@@ -345,19 +361,33 @@ class DevToolsViewController: UIViewController {
     }
     
     
-    private func selectDOMElement(_ element: DOMElement) {
+    private func selectDOMElement(_ element: LazyDOMElement) {
         selectedDOMElement = element
-        selectedElementSelector = element.selector
+        selectedElementId = element.elementId
         elementsTableView.reloadData()
         
-        // Update element details display using simplified format
+        // Update element details display
         updateElementDetailsFromDOMElement(element)
+        
+        // Select element in inspector for highlighting (now in BrowserViewController)
+        browserViewController?.domInspector?.selectElement(elementId: element.elementId)
     }
     
-    private func updateElementDetailsFromDOMElement(_ element: DOMElement) {
+    private func updateElementDetailsFromDOMElement(_ element: LazyDOMElement) {
         let details = """
         Element: \(element.tagName.uppercased())
-        Selector: \(element.selector)
+        Selector: \(element.displaySelector ?? element.elementId)
+        
+        Dimensions:
+        Size: \(element.dimensions.width) × \(element.dimensions.height)
+        Position: (\(element.dimensions.left), \(element.dimensions.top))
+        
+        Styles:
+        Display: \(element.styles.display)
+        Position: \(element.styles.position)
+        Color: \(element.styles.color)
+        Background: \(element.styles.backgroundColor)
+        Font: \(element.styles.fontSize) \(element.styles.fontFamily)
         
         Attributes:
         \(element.attributes.isEmpty ? "None" : element.attributes.map { "  \($0.key): \($0.value)" }.joined(separator: "\n"))
@@ -365,10 +395,9 @@ class DevToolsViewController: UIViewController {
         Text Content:
         \(element.textContent?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200) ?? "None")
         
-        Children: \(element.childCount)
+        Children: \(element.childCount) (Has Children: \(element.hasChildren))
         Depth: \(element.depth)
-        
-        Note: Select an element on the page for detailed styles and dimensions.
+        Loading State: \(element.loadingState)
         """
         
         elementDetailsLabel.text = details
@@ -676,10 +705,12 @@ class DevToolsViewController: UIViewController {
     }
     
     // MARK: - Public Methods
-    func updateData(consoleLogs: [String], networkRequests: [NetworkRequestModel], webView: WKWebView) {
+    func updateData(consoleLogs: [String], networkRequests: [NetworkRequestModel], webView: WKWebView, domElements: [LazyDOMElement]) {
         self.consoleLogs = consoleLogs
         self.networkRequests = networkRequests
         self.currentWebView = webView
+        self.filteredDOMElements = domElements
+        NSLog("🔍 DevToolsViewController: updateData called with \(domElements.count) DOM elements")
         
         // Update current tab data without rebuilding UI
         switch currentTab {
@@ -688,13 +719,60 @@ class DevToolsViewController: UIViewController {
         case .console:
             updateConsoleDisplay()
         case .elements:
-            // Elements tab - trigger DOM refresh from browser
-            browserViewController?.refreshDOMTree()
-            loadDOMContent()
+            // Elements tab - just reload the table with the provided elements
             elementsTableView.reloadData()
+            NSLog("🔍 DevToolsViewController: Reloaded elements table with \(domElements.count) elements")
         case .context:
             // Context tab - refresh the context content
             contextTextView?.text = generateCompleteContext()
+        }
+    }
+    
+    // New methods for receiving DOM updates from BrowserViewController
+    func updateDOMElements(_ elements: [LazyDOMElement]) {
+        NSLog("🔍 DevToolsViewController: updateDOMElements called with \(elements.count) elements")
+        self.filteredDOMElements = elements
+        if currentTab == .elements {
+            elementsTableView.reloadData()
+            NSLog("🔍 DevToolsViewController: Reloaded elements table")
+        }
+    }
+    
+    func updateDOMChildren(_ children: [LazyDOMElement], for elementId: String) {
+        NSLog("✅ DevToolsViewController: updateDOMChildren called with \(children.count) children for elementId: \(elementId)")
+        NSLog("🔍 DevToolsViewController: browserViewController exists: %@", browserViewController != nil ? "YES" : "NO")
+        
+        if let browserVC = browserViewController {
+            NSLog("🔍 DevToolsViewController: domInspector exists: %@", browserVC.domInspector != nil ? "YES" : "NO")
+        }
+        
+        // Get updated flattened elements from the DOM inspector
+        if let inspector = browserViewController?.domInspector {
+            let updatedElements = inspector.getFlattenedVisibleElements()
+            NSLog("✅ DevToolsViewController: Got \(updatedElements.count) flattened elements from inspector")
+            self.filteredDOMElements = updatedElements
+            
+            // Reload table if we're on elements tab
+            NSLog("🔍 DevToolsViewController: currentTab is: %@", String(describing: currentTab))
+            if currentTab == .elements {
+                DispatchQueue.main.async {
+                    self.elementsTableView.reloadData()
+                    NSLog("✅ DevToolsViewController: Reloaded elements table with expanded children")
+                }
+            } else {
+                NSLog("❌ DevToolsViewController: Not reloading table because currentTab is not .elements")
+            }
+        } else {
+            NSLog("❌ DevToolsViewController: Could not get DOM inspector from browserViewController")
+        }
+    }
+    
+    func updateSelectedElement(_ element: LazyDOMElement) {
+        NSLog("🔍 DevToolsViewController: updateSelectedElement called")
+        self.selectedDOMElement = element
+        if currentTab == .elements {
+            updateElementDetailsFromDOMElement(element)
+            elementsTableView.reloadData()
         }
     }
 }
@@ -715,25 +793,23 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView == elementsTableView {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "DOMElementCell", for: indexPath)
+            let cell = tableView.dequeueReusableCell(withIdentifier: LazyDOMTableViewCell.identifier, for: indexPath) as! LazyDOMTableViewCell
             let element = filteredDOMElements[indexPath.row]
-            let isSelected = element.selector == selectedDOMElement?.selector
             
-            // Create display name with indentation for depth
-            let indent = String(repeating: "  ", count: element.depth)
-            var displayName = "\(indent)\(element.tagName.lowercased())"
+            cell.configure(with: element, onExpand: { [weak self] in
+                NSLog("🔍 DevToolsViewController: Cell expand callback triggered for \(element.tagName)")
+                self?.toggleElementExpansion(element: element)
+            }, onSelect: { [weak self] in
+                NSLog("🔍 DevToolsViewController: Cell select callback triggered for \(element.tagName)")
+                self?.selectDOMElement(element)
+            })
             
-            if let id = element.id, !id.isEmpty {
-                displayName += "#\(id)"
+            // Handle selection state
+            if element.elementId == self.selectedDOMElement?.elementId {
+                cell.setSelected(element)
+            } else {
+                cell.setDeselected()
             }
-            
-            if let className = element.className, !className.isEmpty {
-                let classes = className.split(separator: " ").prefix(2).joined(separator: " ")
-                displayName += ".\(classes.replacingOccurrences(of: " ", with: "."))"
-            }
-            
-            cell.textLabel?.text = displayName
-            cell.backgroundColor = isSelected ? UIColor.systemBlue.withAlphaComponent(0.2) : UIColor.clear
             
             return cell
         } else if tableView == consoleTableView {
@@ -757,11 +833,11 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // Only handle selection for non-elements tables since elementsTableView.allowsSelection = false
         tableView.deselectRow(at: indexPath, animated: true)
         
-        if tableView == elementsTableView {
-            let element = filteredDOMElements[indexPath.row]
-            selectDOMElement(element)
+        if tableView != elementsTableView {
+            // Handle other table views if needed
         }
     }
 }
@@ -769,11 +845,11 @@ extension DevToolsViewController: UITableViewDataSource, UITableViewDelegate {
 // MARK: - ContextCopyControllerDelegate
 extension DevToolsViewController: ContextCopyControllerDelegate {
     func contextCopyController(_ controller: ContextCopyController, didRequestDOMExtraction completion: @escaping (String?) -> Void) {
-        delegate?.devToolsDidRequestDOMExtraction(for: selectedElementSelector.isEmpty ? "" : selectedElementSelector, completion: completion)
+        delegate?.devToolsDidRequestDOMExtraction(for: selectedElementId.isEmpty ? "" : selectedElementId, completion: completion)
     }
     
     func contextCopyController(_ controller: ContextCopyController, didRequestCSSExtraction completion: @escaping (String?) -> Void) {
-        delegate?.devToolsDidRequestCSSExtraction(for: selectedElementSelector.isEmpty ? "body" : selectedElementSelector, completion: completion)
+        delegate?.devToolsDidRequestCSSExtraction(for: selectedElementId.isEmpty ? "body" : selectedElementId, completion: completion)
     }
     
     func contextCopyControllerDidRequestConsoleLogs(_ controller: ContextCopyController) -> [String] {
@@ -830,64 +906,20 @@ extension DevToolsViewController {
     }
     
     func updateDOMTree(_ treeData: [String: Any]) {
-        domInspector.updateDOMTree(treeData)
-        refreshElementsList()
+        // Legacy method - DOM tree now provided by BrowserViewController
+        // No action needed here
     }
     
-    func updateSelectedElement(_ elementData: [String: Any]) {
-        domInspector.updateSelectedElement(elementData)
-        
-        if let selectedElement = domInspector.getSelectedElement() {
-            updateElementDetails(selectedElement)
-            
-            // Disable selection mode after selection
-            isElementSelectionMode = false
-            elementSelectButton.isSelected = false
+    func updateSelectedElementFromData(_ elementData: [String: Any]) {
+        // Legacy method - now handled by BrowserViewController's LazyDOMInspector
+        // Extract elementId from elementData and use it
+        if let elementId = elementData["elementId"] as? String {
+            browserViewController?.domInspector?.selectElement(elementId: elementId)
         }
-    }
-    
-    private func refreshElementsList() {
-        let allElements = domInspector.getFlattenedElements()
         
-        // Apply search filter
-        let filteredElements = searchText.isEmpty ? 
-            allElements : 
-            domInspector.searchElements(query: searchText)
-        
-        // Update table view on main thread
-        Task { @MainActor in
-            // Update filtered elements directly
-            self.filteredDOMElements = filteredElements
-            self.elementsTableView.reloadData()
-        }
-    }
-    
-    private func updateElementDetails(_ element: DOMElement) {
-        let details = """
-        Element: \(element.tagName)
-        Selector: \(element.selector)
-        
-        Dimensions:
-        Size: \(element.dimensions.width) × \(element.dimensions.height)
-        Position: (\(element.dimensions.left), \(element.dimensions.top))
-        
-        Styles:
-        Display: \(element.styles.display)
-        Position: \(element.styles.position)
-        Color: \(element.styles.color)
-        Background: \(element.styles.backgroundColor)
-        Font: \(element.styles.fontSize) \(element.styles.fontFamily)
-        
-        Attributes:
-        \(element.attributes.map { "\($0.key): \($0.value)" }.joined(separator: "\n"))
-        
-        Text Content:
-        \(element.textContent?.prefix(200) ?? "None")
-        """
-        
-        Task { @MainActor in
-            self.elementDetailsLabel.text = details
-        }
+        // Disable selection mode after selection
+        isElementSelectionMode = false
+        elementSelectButton.isSelected = false
     }
     
     // Enhanced copy functionality for DOM inspector context
@@ -896,15 +928,10 @@ extension DevToolsViewController {
         
         switch currentTab {
         case .elements:
-            if let selectedElement = domInspector.getSelectedElement() {
-                contextToExport = domInspector.generateBugReportContext(
-                    selectedElement: selectedElement,
-                    consoleLogs: consoleLogs,
-                    networkRequests: networkRequests,
-                    currentURL: currentWebView?.url?.absoluteString ?? ""
-                )
+            if let selectedElement = browserViewController?.domInspector?.getSelectedElement() {
+                contextToExport = generateElementContext(selectedElement)
             } else {
-                contextToExport = domInspector.generatePerformanceContext(element: nil)
+                contextToExport = generateGeneralElementsContext()
             }
         case .console:
             contextToExport = """
@@ -957,12 +984,67 @@ extension DevToolsViewController {
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
+    
+    private func generateElementContext(_ element: LazyDOMElement) -> String {
+        return """
+        # Element Analysis Context
+        
+        ## Selected Element
+        Tag: \(element.tagName)
+        Selector: \(element.displaySelector ?? element.elementId)
+        Dimensions: \(element.dimensions.width) × \(element.dimensions.height)
+        Position: (\(element.dimensions.left), \(element.dimensions.top))
+        
+        ## Attributes
+        \(element.attributes.map { "\($0.key): \($0.value)" }.joined(separator: "\n"))
+        
+        ## Styles
+        Display: \(element.styles.display)
+        Position: \(element.styles.position)
+        Color: \(element.styles.color)
+        Background: \(element.styles.backgroundColor)
+        
+        ## Context
+        Text Content: \(element.textContent?.prefix(200) ?? "None")
+        Child Count: \(element.childCount)
+        Depth: \(element.depth)
+        
+        ## LLM Analysis Prompt
+        Analyze this DOM element for potential issues, accessibility concerns, or styling problems.
+        """
+    }
+    
+    private func generateGeneralElementsContext() -> String {
+        let totalElements = filteredDOMElements.count
+        let selectedElementsInfo = filteredDOMElements.prefix(10).map { element in
+            "\(element.tagName.lowercased())\(element.id != nil ? "#\(element.id!)" : "")"
+        }.joined(separator: ", ")
+        
+        return """
+        # DOM Elements Overview
+        
+        ## Current Page Elements
+        Total visible elements: \(totalElements)
+        Sample elements: \(selectedElementsInfo)
+        
+        ## LLM Analysis Prompt
+        Analyze the DOM structure for potential performance or accessibility issues.
+        """
+    }
 }
 
 // MARK: - Public API for BrowserViewController
 extension DevToolsViewController {
     
     func setBrowserViewController(_ browser: BrowserViewController) {
+        NSLog("🔍 DevToolsViewController: setBrowserViewController called!")
+        NSLog("🔍 DevToolsViewController: Browser has domInspector: %@", browser.domInspector != nil ? "YES" : "NO")
         self.browserViewController = browser
+        NSLog("🔍 DevToolsViewController: browserViewController successfully set: %@", self.browserViewController != nil ? "YES" : "NO")
     }
+    
+    // handleLazyDOMMessage removed - DOM handling now done by BrowserViewController
 }
+
+// LazyDOMInspectorDelegate extension removed - 
+// DOM handling now done by BrowserViewController
