@@ -40,6 +40,13 @@ class DevToolsViewController: UIViewController {
     private var searchText: String = ""
     private var networkSearchText: String = ""
     
+    // Context switches
+    private var fullDOMSwitch: UISwitch?
+    private var selectedElementSwitch: UISwitch?
+    private var cssSwitch: UISwitch?
+    private var networkSwitch: UISwitch?
+    private var consoleSwitch: UISwitch?
+    
     // DOM Inspector
     private var isElementSelectionMode = false
     weak var browserViewController: BrowserViewController?
@@ -461,18 +468,18 @@ class DevToolsViewController: UIViewController {
         contextTypeStack.spacing = 8
         stackView.addArrangedSubview(contextTypeStack)
         
-        // Create checkboxes for context types
-        let fullDOMCheckbox = createContextCheckbox(title: "Full DOM", isChecked: true)
-        let selectedElementCheckbox = createContextCheckbox(title: "Selected Element", isChecked: true)
-        let cssCheckbox = createContextCheckbox(title: "CSS Styles", isChecked: false)
-        let networkCheckbox = createContextCheckbox(title: "Network Logs", isChecked: false)
-        let consoleCheckbox = createContextCheckbox(title: "Console Logs", isChecked: false)
+        // Create switches for context types
+        let fullDOMContainer = createContextSwitch(title: "Full DOM", isOn: false, switchRef: &fullDOMSwitch)
+        let selectedElementContainer = createContextSwitch(title: "Selected Element", isOn: true, switchRef: &selectedElementSwitch)
+        let cssContainer = createContextSwitch(title: "CSS Styles", isOn: false, switchRef: &cssSwitch)
+        let networkContainer = createContextSwitch(title: "Network Logs", isOn: true, switchRef: &networkSwitch)
+        let consoleContainer = createContextSwitch(title: "Console Logs", isOn: true, switchRef: &consoleSwitch)
         
-        contextTypeStack.addArrangedSubview(fullDOMCheckbox)
-        contextTypeStack.addArrangedSubview(selectedElementCheckbox)
-        contextTypeStack.addArrangedSubview(cssCheckbox)
-        contextTypeStack.addArrangedSubview(networkCheckbox)
-        contextTypeStack.addArrangedSubview(consoleCheckbox)
+        contextTypeStack.addArrangedSubview(fullDOMContainer)
+        contextTypeStack.addArrangedSubview(selectedElementContainer)
+        contextTypeStack.addArrangedSubview(cssContainer)
+        contextTypeStack.addArrangedSubview(networkContainer)
+        contextTypeStack.addArrangedSubview(consoleContainer)
         
         // Format info (always plain text)
         let formatLabel = UILabel()
@@ -558,37 +565,43 @@ class DevToolsViewController: UIViewController {
     
     // MARK: - Context Configuration Methods
     
-    private func createContextCheckbox(title: String, isChecked: Bool) -> UIView {
+    private func createContextSwitch(title: String, isOn: Bool, switchRef: inout UISwitch?) -> UIView {
         let containerView = UIView()
         
-        let button = UIButton(type: .system)
-        button.setTitle(isChecked ? "☑️ \(title)" : "☐ \(title)", for: .normal)
-        button.contentHorizontalAlignment = .left
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16)
-        button.setTitleColor(UIColor.label, for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(contextTypeToggled(_:)), for: .touchUpInside)
-        containerView.addSubview(button)
+        // Create label
+        let label = UILabel()
+        label.text = title
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = UIColor.label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(label)
+        
+        // Create switch
+        let toggle = UISwitch()
+        toggle.isOn = isOn
+        toggle.addTarget(self, action: #selector(contextSwitchToggled(_:)), for: .valueChanged)
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(toggle)
+        
+        // Store reference
+        switchRef = toggle
         
         NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: containerView.topAnchor),
-            button.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            button.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
-            button.heightAnchor.constraint(equalToConstant: 32)
+            label.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 6),
+            label.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: toggle.leadingAnchor, constant: -12),
+            label.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -6),
+            
+            toggle.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            toggle.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            
+            containerView.heightAnchor.constraint(equalToConstant: 44)
         ])
         
         return containerView
     }
     
-    @objc private func contextTypeToggled(_ sender: UIButton) {
-        // Toggle checkbox state
-        let currentTitle = sender.title(for: .normal) ?? ""
-        let isCurrentlyChecked = currentTitle.hasPrefix("☑️")
-        let baseTitle = currentTitle.replacingOccurrences(of: "☑️ ", with: "").replacingOccurrences(of: "☐ ", with: "")
-        let newTitle = isCurrentlyChecked ? "☐ \(baseTitle)" : "☑️ \(baseTitle)"
-        sender.setTitle(newTitle, for: .normal)
-        
+    @objc private func contextSwitchToggled(_ sender: UISwitch) {
         updateContextPreview()
     }
     
@@ -615,8 +628,85 @@ class DevToolsViewController: UIViewController {
     }
     
     private func generateConfiguredContext() -> String {
-        // For now, return the complete context - this would be enhanced to respect checkbox selections
-        return generateCompleteContext()
+        let currentURL = currentWebView?.url?.absoluteString ?? "Unknown URL"
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+        
+        var contextSections: [String] = []
+        
+        // Add header
+        contextSections.append("""
+        # Debug Context Export
+        Generated: \(timestamp)
+        Current URL: \(currentURL)
+        """)
+        
+        // Add sections based on switch states
+        if fullDOMSwitch?.isOn == true {
+            contextSections.append("""
+            
+            ## Full DOM Structure
+            [Full DOM would be extracted here - requires JavaScript evaluation]
+            """)
+        }
+        
+        if selectedElementSwitch?.isOn == true {
+            let elementInfo = selectedDOMElement?.tagName ?? "No element selected"
+            contextSections.append("""
+            
+            ## Selected Element
+            Element: \(elementInfo)
+            Selector: \(selectedDOMElement?.displaySelector ?? "None")
+            """)
+        }
+        
+        if cssSwitch?.isOn == true {
+            contextSections.append("""
+            
+            ## CSS Styles
+            [CSS styles would be extracted here - requires JavaScript evaluation]
+            """)
+        }
+        
+        if networkSwitch?.isOn == true {
+            let failedRequests = networkRequests.filter { $0.status >= 400 || $0.status == 0 }
+            let recentRequests = networkRequests.suffix(10)
+            
+            contextSections.append("""
+            
+            ## Network Requests (\(networkRequests.count) total)
+            ### Failed Requests (\(failedRequests.count)):
+            \(failedRequests.prefix(5).map { "❌ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
+            
+            ### Recent Requests:
+            \(recentRequests.map { "✅ \($0.method) \($0.url) - Status: \($0.status)" }.joined(separator: "\n"))
+            """)
+        }
+        
+        if consoleSwitch?.isOn == true {
+            let recentConsoleLogs = consoleLogs.suffix(15).joined(separator: "\n")
+            contextSections.append("""
+            
+            ## Console Logs (Last 15 entries)
+            \(recentConsoleLogs.isEmpty ? "No console logs available" : recentConsoleLogs)
+            """)
+        }
+        
+        // Add analysis prompt if any sections are included
+        if contextSections.count > 1 {
+            contextSections.append("""
+            
+            ## Instructions for LLM Analysis:
+            Please analyze the above context for:
+            1. Any console errors or warnings that indicate problems
+            2. Failed network requests and potential causes
+            3. Performance issues based on request patterns
+            4. Recommendations for debugging or fixing identified issues
+            
+            Focus on actionable insights that would help debug web application issues.
+            """)
+        }
+        
+        return contextSections.joined(separator: "\n")
     }
     
     private func generateCompleteContext() -> String {

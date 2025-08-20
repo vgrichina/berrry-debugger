@@ -11,7 +11,7 @@ class ContextCopyController: NSObject {
     
     weak var delegate: ContextCopyControllerDelegate?
     
-    private var selectedContextTypes: Set<ContextType> = [.selectedElement]
+    private var selectedContextTypes: Set<ContextType> = [.selectedElement, .networkLogs, .consoleLogs]
     private var selectedFormat: ContextFormat = .json
     private var promptTemplate: String = "Debug this: {context}"
     

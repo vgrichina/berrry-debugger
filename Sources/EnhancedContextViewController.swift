@@ -17,7 +17,7 @@ class EnhancedContextViewController: UIViewController {
     // Context Type Selection
     private let contextSelectionLabel = UILabel()
     private let contextStackView = UIStackView()
-    private var contextButtons: [ContextType: UIButton] = [:]
+    private var contextSwitches: [ContextType: UISwitch] = [:]
     
     // Format Selection
     private let formatSelectionLabel = UILabel()
@@ -40,7 +40,7 @@ class EnhancedContextViewController: UIViewController {
     private let closeButton = UIButton(type: .system)
     
     // Data
-    private var selectedContextTypes: Set<ContextType> = [.selectedElement]
+    private var selectedContextTypes: Set<ContextType> = [.selectedElement, .networkLogs, .consoleLogs]
     private var selectedFormat: ContextFormat = .json
     private var promptTemplate: String = "Debug this: {context}"
     private var previewContent: String = ""
@@ -101,7 +101,7 @@ class EnhancedContextViewController: UIViewController {
         contextStackView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(contextStackView)
         
-        // Create buttons for each context type
+        // Create switches for each context type
         let contextTypes: [(ContextType, String, String)] = [
             (.selectedElement, "🎯 Selected Element", "Currently selected DOM element"),
             (.fullDOM, "🌐 Full DOM", "Complete HTML structure"),
@@ -111,48 +111,62 @@ class EnhancedContextViewController: UIViewController {
         ]
         
         for (type, title, subtitle) in contextTypes {
-            let button = createContextButton(type: type, title: title, subtitle: subtitle)
-            contextButtons[type] = button
-            contextStackView.addArrangedSubview(button)
+            let switchContainer = createContextSwitchRow(type: type, title: title, subtitle: subtitle)
+            contextStackView.addArrangedSubview(switchContainer)
         }
-        
-        updateContextButtonStates()
     }
     
-    private func createContextButton(type: ContextType, title: String, subtitle: String) -> UIButton {
-        let button = UIButton(type: .system)
-        button.backgroundColor = UIColor.systemGray6
-        button.layer.cornerRadius = 12
-        button.layer.borderWidth = 2
-        button.layer.borderColor = UIColor.clear.cgColor
-        button.contentHorizontalAlignment = .left
-        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+    private func createContextSwitchRow(type: ContextType, title: String, subtitle: String) -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = UIColor.systemGray6
+        containerView.layer.cornerRadius = 12
+        containerView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Create attributed title
-        let attributedTitle = NSMutableAttributedString()
-        attributedTitle.append(NSAttributedString(
-            string: title + "\n",
-            attributes: [
-                .font: UIFont.systemFont(ofSize: 16, weight: .medium),
-                .foregroundColor: UIColor.label
-            ]
-        ))
-        attributedTitle.append(NSAttributedString(
-            string: subtitle,
-            attributes: [
-                .font: UIFont.systemFont(ofSize: 14, weight: .regular),
-                .foregroundColor: UIColor.secondaryLabel
-            ]
-        ))
+        // Create labels stack
+        let labelsStack = UIStackView()
+        labelsStack.axis = .vertical
+        labelsStack.spacing = 2
+        labelsStack.translatesAutoresizingMaskIntoConstraints = false
         
-        button.setAttributedTitle(attributedTitle, for: .normal)
-        button.titleLabel?.numberOfLines = 0
-        button.titleLabel?.lineBreakMode = .byWordWrapping
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        titleLabel.textColor = UIColor.label
         
-        button.addTarget(self, action: #selector(contextButtonTapped(_:)), for: .touchUpInside)
-        button.tag = contextButtons.count
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = subtitle
+        subtitleLabel.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        subtitleLabel.textColor = UIColor.secondaryLabel
+        subtitleLabel.numberOfLines = 0
         
-        return button
+        labelsStack.addArrangedSubview(titleLabel)
+        labelsStack.addArrangedSubview(subtitleLabel)
+        
+        // Create switch
+        let toggle = UISwitch()
+        toggle.isOn = selectedContextTypes.contains(type)
+        toggle.addTarget(self, action: #selector(contextSwitchToggled(_:)), for: .valueChanged)
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Store switch reference
+        contextSwitches[type] = toggle
+        
+        containerView.addSubview(labelsStack)
+        containerView.addSubview(toggle)
+        
+        NSLayoutConstraint.activate([
+            labelsStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            labelsStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            labelsStack.trailingAnchor.constraint(equalTo: toggle.leadingAnchor, constant: -12),
+            labelsStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            
+            toggle.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            toggle.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            
+            containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 60)
+        ])
+        
+        return containerView
     }
     
     private func setupFormatSelection() {
@@ -332,24 +346,23 @@ class EnhancedContextViewController: UIViewController {
             actionStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
         
-        // Context buttons height
-        for button in contextButtons.values {
-            button.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        }
+        // Switch containers are sized by their intrinsic content size
     }
     
     // MARK: - Actions
-    @objc private func contextButtonTapped(_ sender: UIButton) {
-        let contextTypes = Array(ContextType.allCases)
-        let contextType = contextTypes[sender.tag]
-        
-        if selectedContextTypes.contains(contextType) {
-            selectedContextTypes.remove(contextType)
-        } else {
-            selectedContextTypes.insert(contextType)
+    @objc private func contextSwitchToggled(_ sender: UISwitch) {
+        // Find which context type this switch corresponds to
+        for (type, switchControl) in contextSwitches {
+            if switchControl == sender {
+                if sender.isOn {
+                    selectedContextTypes.insert(type)
+                } else {
+                    selectedContextTypes.remove(type)
+                }
+                break
+            }
         }
         
-        updateContextButtonStates()
         updatePreview()
     }
     
@@ -381,22 +394,6 @@ class EnhancedContextViewController: UIViewController {
     }
     
     // MARK: - Helper Methods
-    private func updateContextButtonStates() {
-        let contextTypes = Array(ContextType.allCases)
-        
-        for (index, button) in contextButtons.values.enumerated() {
-            let contextType = contextTypes[index]
-            let isSelected = selectedContextTypes.contains(contextType)
-            
-            if isSelected {
-                button.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.2)
-                button.layer.borderColor = UIColor.systemBlue.cgColor
-            } else {
-                button.backgroundColor = UIColor.systemGray6
-                button.layer.borderColor = UIColor.clear.cgColor
-            }
-        }
-    }
     
     private func updatePreview() {
         // Mock preview content based on selected types
